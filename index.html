@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; media-src data:; manifest-src 'self'; worker-src 'self'">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -145,7 +145,7 @@
   .numrow{display:flex;gap:8px;margin:12px 18px 0}
   .numrow .tcard{flex:1;margin:0}
   input[type=number],input[type=text],input[type=date]{width:100%;background:var(--surface2);color:var(--text);
-    border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-family:var(--mono);font-size:15px;-moz-appearance:textfield}
+    border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-family:var(--mono);font-size:16px;-moz-appearance:textfield}
   input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]:focus,input[type=text]:focus,input[type=date]:focus{outline:none;border-color:var(--amber)}
   details{margin:12px 18px 0}
@@ -330,7 +330,7 @@
    Durable core: storage, progression engine, math. No model in the loop.
    AI layer: you copy shorthand out to Claude; Claude never holds the data. */
 
-const APP = "qbranch", SCHEMA = 1, DB_KEY = "qbranch:v1";
+const APP = "qbranch", SCHEMA = 2, DB_KEY = "qbranch:v1";
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const todayISO = () => new Date().toLocaleDateString("en-CA");
@@ -406,17 +406,27 @@ function seed(){
     sessions:{A:null, B:null, C:null}
   };
 }
-/* migrate legacy single-slot {session} → per-day {sessions:{A,B,C}} */
+/* ---- schema migration ladder: each step upgrades v(n-1) → v(n) ---- */
+const MIGRATIONS = {
+  2: d => { // single-slot {session} → per-day {sessions:{A,B,C}}
+    if(!d.sessions || typeof d.sessions!=="object"){
+      d.sessions = {A:null, B:null, C:null};
+      if(d.session && d.session.day && d.sessions[d.session.day]!==undefined)
+        d.sessions[d.session.day] = d.session;
+    }
+    delete d.session;
+    return d;
+  }
+  // future: 3: d => {...}
+};
 function migrate(d){
   if(!d) return d;
-  if(!d.sessions || typeof d.sessions!=="object"){
-    d.sessions = {A:null, B:null, C:null};
-    if(d.session && d.session.day && d.sessions[d.session.day]!==undefined){
-      d.sessions[d.session.day] = d.session;
-    }
-  }
+  let v = typeof d.schema==="number" ? d.schema : 1;
+  while(v < SCHEMA){ v++; if(MIGRATIONS[v]) d = MIGRATIONS[v](d); }
+  d.schema = SCHEMA;
+  // invariant regardless of path: sessions is an object with A/B/C keys
+  if(!d.sessions || typeof d.sessions!=="object") d.sessions = {A:null, B:null, C:null};
   ["A","B","C"].forEach(k=>{ if(d.sessions[k]===undefined) d.sessions[k]=null; });
-  delete d.session;
   return d;
 }
 let db, memOnly=false, saveT;
@@ -429,11 +439,21 @@ function load(){
   }catch(e){}
   return null;
 }
-function persist(){
+let persistT=null, dirty=false;
+function writeNow(){
+  clearTimeout(persistT); persistT=null; dirty=false;
   try{ localStorage.setItem(DB_KEY, JSON.stringify(db)); memOnly=false; }
   catch(e){ memOnly=true; }
-  flashSaved(); renderVaultStat();
+  renderVaultStat();
 }
+function persist(){ writeNow(); flashSaved(); }        // immediate — structural changes
+function persistSoon(){                                 // debounced — high-frequency input
+  dirty=true; flashSaved();
+  clearTimeout(persistT); persistT=setTimeout(writeNow, 400);
+}
+// never lose the last keystroke if the tab is backgrounded/closed mid-debounce
+window.addEventListener("pagehide", ()=>{ if(dirty) writeNow(); });
+document.addEventListener("visibilitychange", ()=>{ if(document.hidden && dirty) writeNow(); });
 db = load() || seed();
 persist(); // bake seed/migration into storage on boot
 
@@ -444,33 +464,57 @@ function flashSaved(){ const el=$("saveInd"); if(!el)return;
 
 /* ---------- progression engine (§8) — deterministic, no model ---------- */
 function parseRPE(s){ if(s==null) return null; const m=String(s).match(/\d+(\.\d+)?/g); if(!m||!m.length) return null; return Math.max(...m.map(Number)); }
-function lastPerf(name){
-  for(let i=db.history.length-1;i>=0;i--){
+function lastPerfs(name,n){ // most-recent-first performances of an exercise
+  const out=[];
+  for(let i=db.history.length-1;i>=0 && out.length<n;i--){
     const e=(db.history[i].exercises||[]).find(x=>x.name===name);
-    if(e) return {e, date:db.history[i].date};
-  } return null;
+    if(e) out.push({e, date:db.history[i].date});
+  } return out;
 }
+function lastPerf(name){ return lastPerfs(name,1)[0]||null; }
+function perfStats(e){ // reduce one logged exercise to the numbers §8 needs
+  const sets=e.sets.filter(s=>s.rep!=="" && s.rep!=null);
+  if(!sets.length) return null;
+  const reps=sets.map(s=>parseInt(s.rep,10)||0);
+  const rpes=sets.map(s=>parseRPE(s.rpe)).filter(v=>v!=null);
+  return {wt:Math.max(...sets.map(s=>parseFloat(s.wt)||0)), reps,
+    minReps:Math.min(...reps), maxRPE:rpes.length?Math.max(...rpes):null};
+}
+function isBad(st,def){ // a "rough" session: missed the range floor, or hit failure
+  return !!st && (st.minReps<def.lo || (st.maxRPE!=null && st.maxRPE>=10));
+}
+const roundToInc=(x,inc)=> inc>0 ? Math.round(x/inc)*inc : Math.round(x);
 function prescribe(def){
-  const lp = lastPerf(def.name);
   if(def.mode==="time"){
+    const lp=lastPerf(def.name);
     if(!lp) return {wt:null, fresh:true, why:`🆕 Aim ${def.sets}×${def.lo}${def.name==="Plank"?"–"+def.hi+"s":""} — quality over duration.`};
     const done=lp.e.sets.filter(s=>s.rep!=="").length;
     return {wt:null, fresh:false, why: done<def.sets ? `Last time: ${done} of ${def.sets} sets — <b>reclaim set ${done+1}</b>.` : `All ${def.sets} sets banked last time — hold the standard.`};
   }
-  if(!lp) return {wt:null, fresh:true, why:"🆕 No history — calibrate with 3–4 reps in the tank."};
-  const sets=lp.e.sets.filter(s=>s.rep!=="" && s.rep!=null);
-  if(!sets.length) return {wt:null, fresh:true, why:"🆕 No logged sets yet — calibrate."};
-  const wt=Math.max(...sets.map(s=>parseFloat(s.wt)||0));
-  const reps=sets.map(s=>parseInt(s.rep,10)||0);
-  const rpes=sets.map(s=>parseRPE(s.rpe)).filter(v=>v!=null);
-  const maxRPE=rpes.length?Math.max(...rpes):null;
-  const allTop=reps.every(r=>r>=def.hi);
+  const perfs=lastPerfs(def.name,2);
+  if(!perfs.length) return {wt:null, fresh:true, why:"🆕 No history — calibrate with 3–4 reps in the tank."};
+  const st=perfStats(perfs[0].e);
+  if(!st) return {wt:null, fresh:true, why:"🆕 No logged sets yet — calibrate."};
+  const wt=st.wt, maxRPE=st.maxRPE, prev=perfs[1]?perfStats(perfs[1].e):null;
+
+  // deload: two rough sessions in a row → ~10% cut
+  if(isBad(st,def) && isBad(prev,def)){
+    let dl=roundToInc(wt*0.9,def.inc); if(dl>=wt) dl=Math.max(0,wt-def.inc);
+    return {wt:dl, fresh:false, why:`<b>Deload → ${dl}</b> — two rough sessions (missed range or hit failure). Reset and rebuild clean reps.`};
+  }
+  // back off: one rough session → drop one increment
+  if(isBad(st,def)){
+    const bo=Math.max(0,wt-def.inc);
+    const reason=st.minReps<def.lo ? `missed the ${def.lo}–${def.hi} range (low set ${st.minReps})` : `hit failure (RPE ${maxRPE})`;
+    return {wt:bo, fresh:false, why:`<b>Back off → ${bo}</b> — last time you ${reason}. Rebuild the reps.`};
+  }
+  // reps hit the range but it ran too hard → hold and consolidate
   if(maxRPE!=null && def.rpeMax!=null && maxRPE>def.rpeMax)
     return {wt, fresh:false, why:`<b>Hold ${wt}</b> — reps hit but RPE ran ${maxRPE} vs target ≤${def.rpeMax}. Consolidate, then earn the bump.`};
-  if(reps.every(r=>r>def.hi))
-    return {wt:wt+def.inc, fresh:false, why:`<b>+${def.inc} → ${wt+def.inc}</b> — you exceeded ${def.lo}–${def.hi} on every set (${lp.date}). Earned.`};
-  if(allTop && maxRPE!=null && maxRPE<=def.rpeMax)
-    return {wt:wt+def.inc, fresh:false, why:`<b>+${def.inc} → ${wt+def.inc}</b> — top of range at target RPE (${lp.date}).`};
+  // earned: top of range on every set, with RPE on-target or not logged
+  if(st.reps.every(r=>r>=def.hi))
+    return {wt:wt+def.inc, fresh:false, why:`<b>+${def.inc} → ${wt+def.inc}</b> — top of range on all sets${maxRPE!=null?` at RPE ${maxRPE}`:""} (${perfs[0].date}). Earned.`};
+  // still climbing within the range
   return {wt, fresh:false, why:`<b>Hold ${wt}</b> — chase ${def.hi}s on all sets at ≤ RPE ${def.rpeMax}, then it bumps.`};
 }
 
@@ -495,6 +539,9 @@ function renderDayTabs(){
   ["A","B","C"].forEach(d=>{
     const b=document.createElement("div");
     b.className="daytab"+(d===curDay?" on":"");
+    b.setAttribute("role","button"); b.tabIndex=0;
+    b.setAttribute("aria-pressed", d===curDay?"true":"false");
+    b.setAttribute("aria-label",`Day ${d} — ${{A:"Push/Pull",B:"Legs/Pull",C:"Push/Delts"}[d]}`);
     b.innerHTML=`${d}<small>${{A:"Push/Pull",B:"Legs/Pull",C:"Push/Delts"}[d]}</small>`;
     b.onclick=()=>{
       if(d===curDay) return;
@@ -582,7 +629,7 @@ function renderTrain(){
           const wtInp=card.querySelector(`input[data-s="${s}"][data-k="wt"]`);
           if(wtInp){ st.sets[s].wt=wtInp.value.trim(); wtInp.classList.toggle("filled",wtInp.value.trim()!==""); }
         }
-        persist();
+        persistSoon(); // debounced: typing is the hot path
       });
     });
     const restBtn=card.querySelector(".mini.btn");
@@ -882,8 +929,18 @@ document.querySelectorAll(".nav button").forEach(b=>{
   });
 });
 
+/* keyboard support for the div/span-based custom controls (role="button") */
+document.addEventListener("keydown",e=>{
+  const t=e.target;
+  if((e.key==="Enter"||e.key===" ") && t && t.getAttribute && t.getAttribute("role")==="button"){
+    e.preventDefault(); t.click();
+  }
+});
+
 /* ---------- boot ---------- */
 renderTrain(); renderTele(); renderTrends(); renderVaultStat();
+// make the telemetry tap-chips keyboard-operable (clicks bubble to their group handler)
+document.querySelectorAll("#pg-log .tchip").forEach(c=>{ c.setAttribute("role","button"); c.tabIndex=0; });
 /* offline shell: cache-first service worker (no-ops on file:// or unsupported) */
 try{
   if("serviceWorker" in navigator && location.protocol.startsWith("http")){
