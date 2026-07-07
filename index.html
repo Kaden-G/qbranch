@@ -403,16 +403,29 @@ function seed(){
       ]
     }],
     telemetry:[],
-    session:null
+    sessions:{A:null, B:null, C:null}
   };
 }
-let db, memOnly=false;
+/* migrate legacy single-slot {session} → per-day {sessions:{A,B,C}} */
+function migrate(d){
+  if(!d) return d;
+  if(!d.sessions || typeof d.sessions!=="object"){
+    d.sessions = {A:null, B:null, C:null};
+    if(d.session && d.session.day && d.sessions[d.session.day]!==undefined){
+      d.sessions[d.session.day] = d.session;
+    }
+  }
+  ["A","B","C"].forEach(k=>{ if(d.sessions[k]===undefined) d.sessions[k]=null; });
+  delete d.session;
+  return d;
+}
+let db, memOnly=false, saveT;
 function load(){
   try{
     const raw = localStorage.getItem(DB_KEY);
     if(!raw) return null;
     const d = JSON.parse(raw);
-    if(d && d.app===APP && typeof d.schema==="number" && Array.isArray(d.history)) return d;
+    if(d && d.app===APP && typeof d.schema==="number" && Array.isArray(d.history)) return migrate(d);
   }catch(e){}
   return null;
 }
@@ -422,9 +435,8 @@ function persist(){
   flashSaved(); renderVaultStat();
 }
 db = load() || seed();
-if(!load()){ persist(); }
+persist(); // bake seed/migration into storage on boot
 
-let saveT;
 function flashSaved(){ const el=$("saveInd"); if(!el)return;
   el.textContent = memOnly ? "in-memory ⚠" : "saved ✓";
   el.style.color = memOnly ? "var(--warn)" : "var(--ok)";
@@ -462,16 +474,20 @@ function prescribe(def){
   return {wt, fresh:false, why:`<b>Hold ${wt}</b> — chase ${def.hi}s on all sets at ≤ RPE ${def.rpeMax}, then it bumps.`};
 }
 
-/* ---------- session state ---------- */
-let curDay = (db.session && db.session.day) || "A";
+/* ---------- session state (one in-progress session per day) ---------- */
+let curDay = ["A","B","C"].find(d=>db.sessions[d]) || "A";
+function curSession(){ return db.sessions[curDay]; }
 function freshSession(day){
   return {date:todayISO(), day, data:PROGRAM[day].ex.map(d=>({
     name:d.name, sets:Array.from({length:d.sets},()=>({rep:"",wt:"",rpe:""})), done:false, open:false}))};
 }
 function ensureSession(){
-  if(!db.session || db.session.day!==curDay){ db.session=freshSession(curDay); persist(); }
+  if(!db.sessions[curDay]){ db.sessions[curDay]=freshSession(curDay); persist(); }
 }
-if(db.session){ $("resumeNote").style.display="flex"; }
+/* show resume note if any day already holds logged reps from a prior visit */
+if(["A","B","C"].some(d=>db.sessions[d] && db.sessions[d].data.some(x=>x.sets.some(s=>s.rep!=="")))){
+  $("resumeNote").style.display="flex";
+}
 
 /* ---------- render: train ---------- */
 function renderDayTabs(){
@@ -482,10 +498,8 @@ function renderDayTabs(){
     b.innerHTML=`${d}<small>${{A:"Push/Pull",B:"Legs/Pull",C:"Push/Delts"}[d]}</small>`;
     b.onclick=()=>{
       if(d===curDay) return;
-      const touched = db.session && db.session.data.some(x=>x.done||x.sets.some(s=>s.rep||s.wt));
-      if(touched && !confirm("Switch days? Your current inputs stay saved under "+curDay+" until you complete or reset.")) return;
-      if(db.session && db.session.day!==d && !touched) db.session=null;
-      curDay=d; if(db.session && db.session.day!==d) db.session=null;
+      // per-day sessions: switching is non-destructive — each day keeps its own inputs
+      curDay=d;
       ensureSession(); renderTrain();
     };
     dt.appendChild(b);
@@ -498,8 +512,9 @@ function renderWarm(){
 function renderTrain(){
   ensureSession(); renderDayTabs(); renderWarm();
   const defs=PROGRAM[curDay].ex, list=$("exlist"); list.innerHTML="";
+  const sess=curSession();
   defs.forEach((def,i)=>{
-    const st=db.session.data[i];
+    const st=sess.data[i];
     if(def.ss && (i===0 || defs[i-1].ss!==def.ss)){
       const b=document.createElement("div"); b.className="ssbadge"; b.textContent="Superset "+def.ss+" — minimal rest between"; list.appendChild(b);
     }
@@ -518,8 +533,9 @@ function renderTrain(){
       }else{
         rows+=`<div class="srow${s===0?" head-row":""}"><span class="slbl">${s+1}</span>
           <div class="field"><label>Reps</label><input inputmode="numeric" data-i="${i}" data-s="${s}" data-k="rep" value="${esc(sv.rep)}" placeholder="${def.lo}-${def.hi}"></div>
-          <div class="field"><label>Weight (lb)</label><input inputmode="numeric" data-i="${i}" data-s="${s}" data-k="wt" value="${esc(wtPrefill)}" placeholder="lb"></div></div>`;
-        if(sv.wt==="" && wtPrefill!==""){ sv.wt=String(wtPrefill); } // adopt prefill into model
+          <div class="field"><label>Weight (lb)</label><input inputmode="decimal" data-i="${i}" data-s="${s}" data-k="wt" value="${esc(wtPrefill)}" placeholder="lb"></div></div>`;
+        // Prescribed weight is shown as the field value but NOT committed to the model here;
+        // it's adopted only when a rep is logged (see input handler) so "touched" stays honest.
       }
     }
     card.innerHTML=`
@@ -557,8 +573,15 @@ function renderTrain(){
     card.querySelectorAll("input[data-i]").forEach(inp=>{
       inp.classList.toggle("filled",inp.value.trim()!=="");
       inp.addEventListener("input",()=>{
-        st.sets[+inp.dataset.s][inp.dataset.k]=inp.value.trim();
+        const s=+inp.dataset.s, k=inp.dataset.k;
+        st.sets[s][k]=inp.value.trim();
         inp.classList.toggle("filled",inp.value.trim()!=="");
+        // logging a rep means the set was performed → adopt the shown (prescribed)
+        // weight for that set if it hasn't been set yet
+        if(k==="rep" && def.mode!=="time" && inp.value.trim()!=="" && st.sets[s].wt===""){
+          const wtInp=card.querySelector(`input[data-s="${s}"][data-k="wt"]`);
+          if(wtInp){ st.sets[s].wt=wtInp.value.trim(); wtInp.classList.toggle("filled",wtInp.value.trim()!==""); }
+        }
         persist();
       });
     });
@@ -569,33 +592,56 @@ function renderTrain(){
   persist();
 }
 
-/* ---------- rest timer (audio + vibration) ---------- */
-let timerIv=null;
+/* ---------- rest timer (wall-clock based; audio + vibration) ----------
+   Countdown is derived from an absolute end time, not a decremented counter,
+   so it stays accurate when the phone locks or the tab is backgrounded (JS
+   timers throttle/pause there). We recompute on each tick and on return to
+   foreground, and fire completion immediately if rest already elapsed away. */
+let timerIv=null, timerEnd=0, audioCtx=null;
+function ensureAudio(){ // call from a user gesture so iOS unlocks the context
+  try{
+    if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==="suspended") audioCtx.resume();
+  }catch(e){ audioCtx=null; }
+  return audioCtx;
+}
 function beep(){
   try{
-    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const ctx=ensureAudio(); if(!ctx) throw 0;
     const o=ctx.createOscillator(), g=ctx.createGain();
     o.type="sine"; o.frequency.value=880; o.connect(g); g.connect(ctx.destination);
-    g.gain.setValueAtTime(.001,ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(.3,ctx.currentTime+.02);
-    g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.6);
-    o.start(); o.stop(ctx.currentTime+.65);
+    const t0=ctx.currentTime;
+    g.gain.setValueAtTime(.001,t0);
+    g.gain.exponentialRampToValueAtTime(.3,t0+.02);
+    g.gain.exponentialRampToValueAtTime(.001,t0+.6);
+    o.start(t0); o.stop(t0+.65);
   }catch(e){}
   try{ if(navigator.vibrate) navigator.vibrate([200,80,200]); }catch(e){}
 }
+function drawTimer(){
+  const tt=$("timerT"); if(!tt) return 0;
+  const left=Math.max(0,Math.ceil((timerEnd-Date.now())/1000));
+  tt.textContent=Math.floor(left/60)+":"+String(left%60).padStart(2,"0");
+  return left;
+}
+function timerDone(){
+  if(timerEnd===0) return;          // idempotent: only fire once
+  timerEnd=0; clearInterval(timerIv); timerIv=null;
+  beep(); const tt=$("timerT"); if(tt) tt.textContent="GO";
+  showToast("Rest over — back under the bar 🏋️");
+  setTimeout(()=>$("timer").classList.remove("on"),1500);
+}
 function startTimer(sec,label){
   clearInterval(timerIv);
-  let left=sec; const t=$("timer"),tt=$("timerT");
-  t.classList.add("on");
-  const draw=()=>{ tt.textContent=Math.floor(left/60)+":"+String(left%60).padStart(2,"0"); };
-  draw();
-  timerIv=setInterval(()=>{
-    left--; draw();
-    if(left<=0){ clearInterval(timerIv); beep(); tt.textContent="GO"; showToast("Rest over — back under the bar 🏋️");
-      setTimeout(()=>t.classList.remove("on"),1500); }
-  },1000);
+  ensureAudio();                    // this tap is our chance to unlock audio on iOS
+  timerEnd=Date.now()+sec*1000;
+  $("timer").classList.add("on"); drawTimer();
+  timerIv=setInterval(()=>{ if(drawTimer()<=0) timerDone(); },250);
 }
-$("timerX").onclick=()=>{clearInterval(timerIv);$("timer").classList.remove("on");};
+document.addEventListener("visibilitychange",()=>{
+  if(!document.hidden && timerIv && drawTimer()<=0) timerDone();
+});
+$("timerX").onclick=()=>{clearInterval(timerIv);timerIv=null;timerEnd=0;$("timer").classList.remove("on");};
 
 /* ---------- session log builder + finish ---------- */
 function sessionLogText(sess){
@@ -616,17 +662,18 @@ function sessionLogText(sess){
   });
   return lines.length>1?lines.join("\n"):lines[0]+"\n(no sets logged yet)";
 }
-$("copySession").onclick=()=>{ ensureSession(); copyText(sessionLogText(db.session),"Log copied — paste it to Claude 📋"); };
+$("copySession").onclick=()=>{ ensureSession(); copyText(sessionLogText(curSession()),"Log copied — paste it to Claude 📋"); };
 $("finishBtn").onclick=()=>{
   ensureSession();
-  const touched=db.session.data.some(x=>x.done||x.sets.some(s=>s.rep!==""));
+  const sess=curSession();
+  const touched=sess.data.some(x=>x.done||x.sets.some(s=>s.rep!==""));
   if(!touched){ showToast("Nothing logged yet — enter at least one set"); return; }
-  const entry={date:db.session.date, day:db.session.day,
-    exercises:db.session.data.filter(x=>x.done||x.sets.some(s=>s.rep!=="")).map(x=>({
+  const entry={date:sess.date, day:sess.day,
+    exercises:sess.data.filter(x=>x.done||x.sets.some(s=>s.rep!=="")).map(x=>({
       name:x.name, sets:x.sets.map(s=>({rep:s.rep,wt:s.wt,rpe:s.rpe||""}))}))};
   db.history.push(entry);
-  const text=sessionLogText(db.session);
-  db.session=null; persist();
+  const text=sessionLogText(sess);
+  db.sessions[curDay]=null; persist(); // clear only the completed day
   renderTrain(); renderTrends();
   copyText(text,"Session banked ✓ — log copied for Claude");
 };
@@ -771,9 +818,9 @@ $("vFile").addEventListener("change",e=>{
       const d=JSON.parse(r.result);
       if(!(d && d.app===APP && Array.isArray(d.history) && Array.isArray(d.telemetry))) throw 0;
       if(!confirm(`Restore backup from ${d.exported||"unknown date"}? This replaces current data (${db.history.length} sessions).`)) return;
-      db={app:APP,schema:SCHEMA,created:d.created||todayISO(),program:d.program||db.program,
-          history:d.history,telemetry:d.telemetry,session:d.session||null};
-      persist(); curDay=(db.session&&db.session.day)||"A";
+      db=migrate({app:APP,schema:SCHEMA,created:d.created||todayISO(),program:d.program||db.program,
+          history:d.history,telemetry:d.telemetry,sessions:d.sessions,session:d.session});
+      persist(); curDay=["A","B","C"].find(x=>db.sessions[x])||"A";
       renderTrain(); renderTrends(); showToast("Backup restored ✓");
     }catch(err){ showToast("That file isn't a valid Q Branch backup"); }
     e.target.value="";
