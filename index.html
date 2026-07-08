@@ -644,7 +644,7 @@ function renderTrain(){
    so it stays accurate when the phone locks or the tab is backgrounded (JS
    timers throttle/pause there). We recompute on each tick and on return to
    foreground, and fire completion immediately if rest already elapsed away. */
-let timerIv=null, timerEnd=0, audioCtx=null;
+let timerIv=null, timerEnd=0, hideIv=null, audioCtx=null;
 function ensureAudio(){ // call from a user gesture so iOS unlocks the context
   try{
     if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
@@ -676,10 +676,16 @@ function timerDone(){
   timerEnd=0; clearInterval(timerIv); timerIv=null;
   beep(); const tt=$("timerT"); if(tt) tt.textContent="GO";
   showToast("Rest over — back under the bar 🏋️");
-  setTimeout(()=>$("timer").classList.remove("on"),1500);
+  // Track the auto-hide so a later set's startTimer can cancel it. Otherwise a
+  // pending hide (or one deferred by phone lock/background throttling) can fire
+  // mid-rest and hide the next set's running timer — the "timer only works once
+  // per refresh" bug.
+  clearTimeout(hideIv);
+  hideIv=setTimeout(()=>{ hideIv=null; $("timer").classList.remove("on"); },1500);
 }
 function startTimer(sec,label){
-  clearInterval(timerIv);
+  clearInterval(timerIv); timerIv=null;
+  clearTimeout(hideIv);  hideIv=null;   // cancel any pending auto-hide from the previous set
   ensureAudio();                    // this tap is our chance to unlock audio on iOS
   timerEnd=Date.now()+sec*1000;
   $("timer").classList.add("on"); drawTimer();
@@ -688,7 +694,7 @@ function startTimer(sec,label){
 document.addEventListener("visibilitychange",()=>{
   if(!document.hidden && timerIv && drawTimer()<=0) timerDone();
 });
-$("timerX").onclick=()=>{clearInterval(timerIv);timerIv=null;timerEnd=0;$("timer").classList.remove("on");};
+$("timerX").onclick=()=>{clearInterval(timerIv);timerIv=null;clearTimeout(hideIv);hideIv=null;timerEnd=0;$("timer").classList.remove("on");};
 
 /* ---------- session log builder + finish ---------- */
 function sessionLogText(sess){
