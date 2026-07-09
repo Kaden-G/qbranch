@@ -92,6 +92,8 @@
   .mini{background:var(--surface2);border:1px solid var(--line);border-radius:999px;padding:6px 11px;font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px}
   .mini .k{color:var(--muted)}
   .mini.btn{cursor:pointer;color:var(--accent-bright);border-color:rgba(239,85,112,.35)}
+  .mini.howto{cursor:pointer;text-decoration:none;color:var(--accent-bright);border-color:rgba(239,85,112,.35)}
+  .mini.howto:active{transform:scale(.97)}
   .sets{display:flex;flex-direction:column;gap:8px}
   .srow{display:grid;grid-template-columns:28px 1fr 1fr;gap:9px;align-items:center}
   .slbl{width:25px;height:25px;border-radius:50%;background:var(--surface2);border:1px solid var(--line);
@@ -556,6 +558,13 @@ function renderWarm(){
   $("warmlist").innerHTML = PROGRAM[curDay].warm.map(w=>
     `<div class="warm-item"><span class="dot"></span>${esc(w[0])}<span class="r">${esc(w[1])}</span></div>`).join("");
 }
+/* Demo video for an exercise. A curated URL can be pinned per exercise via a
+   `video:` field on the def; otherwise fall back to a YouTube search by name,
+   which always resolves to a relevant how-to clip with no dead-link upkeep.
+   The link opens externally — the app stays fully offline-capable without it. */
+function demoUrl(def){
+  return def.video || "https://www.youtube.com/results?search_query="+encodeURIComponent("how to "+def.name+" proper form");
+}
 function renderTrain(){
   ensureSession(); renderDayTabs(); renderWarm();
   const defs=PROGRAM[curDay].ex, list=$("exlist"); list.innerHTML="";
@@ -600,6 +609,7 @@ function renderTrain(){
         <div class="why">${rx.why}</div>
         <div class="restbar">
           <span class="mini btn" data-rest="${def.rest}" data-i="${i}">⏱ start ${def.rest}s rest</span>
+          <a class="mini howto" href="${esc(demoUrl(def))}" target="_blank" rel="noopener noreferrer" aria-label="How to perform ${esc(def.name)} — opens video in a new tab">▶ How-to</a>
           ${def.rpe!=="—"?`<span class="mini"><span class="k">target</span> RPE ${def.rpe}</span>`:""}
         </div>
         <div class="sets">${rows}</div>
