@@ -109,6 +109,11 @@
   .cues b{color:var(--text)}
   .subline{margin-top:8px;font-size:12px;color:var(--muted)}
   .subline b{color:var(--accent-bright)}
+  .swapbtn{display:block;width:100%;text-align:left;background:var(--surface2);border:1px solid var(--line);
+    border-radius:11px;padding:9px 12px;font-family:inherit;cursor:pointer}
+  .swapbtn:active{transform:scale(.99)}
+  .chip.swap{background:rgba(239,85,112,.14);color:var(--accent-bright);border:1px solid rgba(239,85,112,.35);
+    margin-left:7px;font-size:10px;padding:1px 7px;border-radius:999px;font-weight:800;vertical-align:middle}
   .donebtn{margin-top:12px;width:100%;background:transparent;border:1.5px solid var(--line);color:var(--text);
     border-radius:12px;padding:11px;font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer}
   .card.done .donebtn{background:var(--ok);border-color:var(--ok);color:#06120b}
@@ -565,6 +570,12 @@ function renderWarm(){
 function demoUrl(def){
   return def.video || "https://www.youtube.com/results?search_query="+encodeURIComponent("how to "+def.name+" proper form");
 }
+/* Clean logged name for an exercise's alternate: strip parenthetical notes
+   ("(later)") and rep/set annotations ("3×8/side") so the swap logs a tidy
+   exercise name into history. */
+function altName(def){
+  return String(def.sub||"").replace(/\s*\(.*?\)\s*/g," ").replace(/\s+\d+\s*×.*$/,"").trim();
+}
 function renderTrain(){
   ensureSession(); renderDayTabs(); renderWarm();
   const defs=PROGRAM[curDay].ex, list=$("exlist"); list.innerHTML="";
@@ -574,7 +585,12 @@ function renderTrain(){
     if(def.ss && (i===0 || defs[i-1].ss!==def.ss)){
       const b=document.createElement("div"); b.className="ssbadge"; b.textContent="Superset "+def.ss+" — minimal rest between"; list.appendChild(b);
     }
-    const rx=prescribe(def);
+    // swap: the logged exercise is st.name; when it differs from the template's
+    // primary, this set is being done as the alternate. Prescription, name and
+    // how-to all follow the effective (possibly swapped) exercise.
+    const alt=altName(def), swapped=!!alt && st.name!==def.name;
+    const eff=swapped ? {...def, name:st.name} : def;
+    const rx=prescribe(eff);
     const card=document.createElement("div");
     card.className="card"+(st.open?" open":"")+(st.done?" done":"")+(def.ss?" ss":"");
     const setword = def.mode==="time" ? (def.name==="Plank"?`${def.sets} × ${def.lo}–${def.hi}s`:`${def.sets} × ${def.lo}/side`) : `${def.sets} × ${def.lo}–${def.hi}`;
@@ -598,7 +614,7 @@ function renderTrain(){
       <div class="head">
         <div class="num">${i+1}</div>
         <div class="hmeta">
-          <div class="ename">${esc(def.name)}</div>
+          <div class="ename">${esc(eff.name)}${swapped?`<span class="chip swap">⇄ swapped</span>`:""}</div>
           <div class="esub"><span>${setword}</span><span class="chip">${esc(def.tag)}</span>
             ${def.rpe!=="—"?`<span class="chip rpe">RPE ${def.rpe}</span>`:""}
             ${rx.fresh?`<span class="new">🆕</span>`:(rx.wt!=null?`<span class="chip rx">▶ ${rx.wt} lb</span>`:"")}
@@ -609,12 +625,14 @@ function renderTrain(){
         <div class="why">${rx.why}</div>
         <div class="restbar">
           <span class="mini btn" data-rest="${def.rest}" data-i="${i}">⏱ start ${def.rest}s rest</span>
-          <a class="mini howto" href="${esc(demoUrl(def))}" target="_blank" rel="noopener noreferrer" aria-label="How to perform ${esc(def.name)} — opens video in a new tab">▶ How-to</a>
+          <a class="mini howto" href="${esc(demoUrl(eff))}" target="_blank" rel="noopener noreferrer" aria-label="How to perform ${esc(eff.name)} — opens video in a new tab">▶ How-to</a>
           ${def.rpe!=="—"?`<span class="mini"><span class="k">target</span> RPE ${def.rpe}</span>`:""}
         </div>
         <div class="sets">${rows}</div>
         <div class="cues">${def.cues}</div>
-        <div class="subline">Swap → <b>${esc(def.sub)}</b></div>
+        ${alt?`<button class="subline swapbtn" type="button">${swapped
+              ? `↩︎ Swap back to <b>${esc(def.name)}</b>`
+              : `⇄ Swap to <b>${esc(alt)}</b>`}</button>`:""}
         <button class="donebtn">${st.done?"✓ Done":"Mark done"}</button>
       </div>`;
     list.appendChild(card);
@@ -644,6 +662,13 @@ function renderTrain(){
     });
     const restBtn=card.querySelector(".mini.btn");
     if(restBtn) restBtn.addEventListener("click",()=>startTimer(+restBtn.dataset.rest, def.name));
+    const swapBtn=card.querySelector(".swapbtn");
+    if(swapBtn) swapBtn.addEventListener("click",ev=>{ ev.stopPropagation();
+      // toggle the logged exercise between the template's primary and its alternate;
+      // any sets already entered stay put — they just re-attribute to the new name
+      st.name = swapped ? def.name : alt;
+      persist(); renderTrain();
+    });
   });
   $("setmeta").textContent = defs.reduce((a,d)=>a+d.sets,0)+" sets";
   persist();
