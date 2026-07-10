@@ -117,6 +117,23 @@
   .donebtn{margin-top:12px;width:100%;background:transparent;border:1.5px solid var(--line);color:var(--text);
     border-radius:12px;padding:11px;font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer}
   .card.done .donebtn{background:var(--ok);border-color:var(--ok);color:#06120b}
+  /* block panel */
+  .bpanel{margin:0 18px 14px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:13px 15px}
+  .bpanel .bhead{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .bpanel .bname{font-size:15px;font-weight:800}
+  .bpanel .bname b{color:var(--accent-bright);font-style:italic}
+  .bpanel .bwk{font-size:11px;font-weight:700;color:var(--muted)}
+  .bpanel .bfocus{font-size:12px;color:var(--muted);margin:2px 0 9px}
+  .bbar{height:7px;border-radius:999px;background:var(--surface2);overflow:hidden}
+  .bbar > i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .3s}
+  .bmeta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
+  .bmeta .bcount{font-size:11px;color:var(--muted2);font-weight:700}
+  .blink{background:none;border:none;color:var(--accent-bright);font-size:11.5px;font-weight:700;font-family:inherit;cursor:pointer;padding:2px 0}
+  .breview{margin-top:11px;border-top:1px solid var(--line);padding-top:10px}
+  .breview .rtitle{font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--ok);margin-bottom:5px}
+  .breview pre{white-space:pre-wrap;font-family:var(--mono);font-size:11.5px;line-height:1.5;color:#c4c4cf;margin:0}
+  .breview .ract{display:flex;gap:8px;margin-top:9px}
+  .new.blk{background:rgba(63,191,127,.14);color:var(--ok);border:1px solid rgba(63,191,127,.35);font-size:10px;padding:1px 7px;border-radius:999px;font-weight:800;margin-left:7px;vertical-align:middle}
   .ssbadge{margin:13px 0 0;font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--accent-bright);display:flex;align-items:center;gap:8px}
   .ssbadge::before,.ssbadge::after{content:"";height:1px;background:var(--line);flex:1}
 
@@ -221,6 +238,7 @@
 
 <!-- ============ TRAIN ============ -->
 <div class="page on" id="pg-train">
+  <div class="bpanel" id="blockPanel"></div>
   <div class="daytabs" id="daytabs"></div>
   <div class="note" id="resumeNote" style="display:none">↩︎ <span><b>Resumed your in-progress session.</b> Everything you'd entered is intact.</span></div>
   <div class="note">🛟 <span><b>Auto-saves on every tap.</b> Lock your phone, switch apps, close the tab — your session survives on this device. Finish with “Complete session” to bank it into History.</span></div>
@@ -337,13 +355,17 @@
    Durable core: storage, progression engine, math. No model in the loop.
    AI layer: you copy shorthand out to Claude; Claude never holds the data. */
 
-const APP = "qbranch", SCHEMA = 2, DB_KEY = "qbranch:v1";
+const APP = "qbranch", SCHEMA = 3, DB_KEY = "qbranch:v1";
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const todayISO = () => new Date().toLocaleDateString("en-CA");
 
-/* ---------- program definition (Block 1 · Re-entry) ---------- */
-const PROGRAM = {
+/* ---------- program definition — the block-neutral template ----------
+   BASE holds the movements, warm-ups and Block-1 targets. Each training
+   block is derived from BASE by a deterministic transform (see BLOCKS +
+   blockProgram): the compounds stay put for consistency while rep ranges,
+   RPE caps, volume and accessory selection shift block to block. */
+const BASE = {
   A:{focus:"Push / Pull emphasis",
     warm:[["Bike or row, easy","2 min"],["Band pull-aparts","×15"],["Bodyweight goblet squats","×10"],["Scap push-ups","×10"]],
     ex:[
@@ -394,13 +416,98 @@ const PROGRAM = {
     ]}
 };
 
+/* ================= BLOCK ENGINE — deterministic periodization =================
+   A recomp arc of blocks, each a transform over BASE. Compounds (Legs/Chest/
+   Back/Shoulders) stay constant for consistency; accessories (Side/Rear delts,
+   Arms, Core) rotate to their alternates on `rotate` blocks for novelty. Rep
+   ranges, RPE caps and volume shift per block. §8 still drives load off logged
+   history, so evaluation → next block is a real, data-aware progression — no
+   model needed. `sessions` = weeks × 3 training days = the auto-advance trigger. */
+const ACCESSORY = new Set(["Side Delts","Rear Delts","Arms","Core"]);
+const BLOCKS = [
+  {name:"Re-entry",      focus:"Rebuild the groove",   weeks:4, sessions:12, dReps:0,  dRpe:0,  dSets:0,  rotate:0,
+   note:"Own every rep, 2–3 in the tank. Re-groove the patterns before we push."},
+  {name:"Accumulation",  focus:"Volume & work capacity",weeks:4, sessions:12, dReps:2,  dRpe:1,  dSets:1,  rotate:1,
+   note:"Chase reps and total work. A touch more volume, fresh accessory picks to keep it interesting."},
+  {name:"Intensification",focus:"Load & strength",      weeks:3, sessions:9,  dReps:-3, dRpe:1,  dSets:-1, rotate:0,
+   note:"Heavier, lower reps, back to the anchor lifts. Push effort — keep form crisp."},
+  {name:"Deload",        focus:"Recover & prime",       weeks:1, sessions:3,  dReps:0,  dRpe:-2, dSets:-1, rotate:0,
+   note:"Back off on purpose. Move well, recover, arrive fresh for the next build."},
+];
+// after the first pass through the arc, loop the build phases (skip Re-entry)
+function nextBlockIndex(i){ return i+1 < BLOCKS.length ? i+1 : 1; }
+const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
+/* Transform one BASE exercise for a block. Returns a fresh def; on `rotate`
+   an accessory becomes its alternate (and its `sub` flips back to the anchor
+   so the user can still swap to it). */
+function applyBlockToEx(d, blk){
+  const out={...d};
+  if(d.mode!=="time"){
+    out.lo=clamp(d.lo+blk.dReps, 4, 30);
+    out.hi=clamp(d.hi+blk.dReps, out.lo, 40);
+  }
+  if(d.rpeMax!=null){ out.rpeMax=clamp(d.rpeMax+blk.dRpe, 5, 10); out.rpe=String(out.rpeMax); }
+  const isAcc=ACCESSORY.has(d.muscle);
+  if(isAcc && blk.dSets) out.sets=clamp(d.sets+blk.dSets, 1, 5);
+  if(isAcc && blk.rotate){
+    const alt=altName(d);
+    if(alt){ out.name=alt; out.sub=d.name; out.rotated=true; }  // swap in the alternate; swap-back points home
+  }
+  return out;
+}
+function blockProgram(bi){
+  const blk=BLOCKS[bi]||BLOCKS[0], out={};
+  ["A","B","C"].forEach(day=>{
+    out[day]={focus:BASE[day].focus, warm:BASE[day].warm, ex:BASE[day].ex.map(d=>applyBlockToEx(d,blk))};
+  });
+  return out;
+}
+function blockWeek(){ return clamp(Math.floor((db.program.done||0)/3)+1, 1, BLOCKS[db.program.i].weeks); }
+
+/* Deliberate progress evaluation for a completed block: first→last logged
+   weight per exercise across that block's banked sessions. Deterministic. */
+function evaluateBlock(bi){
+  const entries=db.history.filter(h=>(h.block==null?0:h.block)===bi);
+  const byName={};
+  entries.forEach(h=>(h.exercises||[]).forEach(e=>{
+    const st=perfStats(e); if(!st) return;
+    (byName[e.name]||(byName[e.name]=[])).push(st.wt);
+  }));
+  const movers=[], holds=[];
+  Object.keys(byName).forEach(name=>{
+    const arr=byName[name], d=arr[arr.length-1]-arr[0];
+    if(d>0) movers.push({name, d});
+    else if(arr.length>=2) holds.push({name});
+  });
+  movers.sort((a,b)=>b.d-a.d);
+  return {bi, name:BLOCKS[bi].name, sessions:entries.length, planned:BLOCKS[bi].sessions, movers, holds};
+}
+function blockReviewText(r){
+  const to=BLOCKS[nextBlockIndex(r.bi)];
+  const L=[`Block ${r.bi+1} “${r.name}” — review`,
+    `Sessions banked: ${r.sessions}/${r.planned}`];
+  if(r.movers.length) L.push("Progressed: "+r.movers.map(m=>`${m.name} +${m.d}`).join(", "));
+  if(r.holds.length)  L.push("Held: "+r.holds.map(h=>h.name).join(", "));
+  L.push(`Next → Block ${nextBlockIndex(r.bi)+1} “${to.name}” · ${to.focus}.`,
+    `Adjust: reps ${to.dReps>=0?"+":""}${to.dReps}, RPE cap ${to.dRpe>=0?"+":""}${to.dRpe}, accessory volume ${to.dSets>=0?"+":""}${to.dSets} set${Math.abs(to.dSets)===1?"":"s"}, `+
+    (to.rotate?"accessories rotate to fresh variations.":"accessories return to the anchor movements."),
+    to.note);
+  return L.join("\n");
+}
+
+/* names logged in seconds (time-mode), across every block variant — used for
+   block-agnostic log formatting since the active PROGRAM only holds one block */
+const TIME_NAMES=new Set();
+["A","B","C"].forEach(day=>BASE[day].ex.forEach(d=>{ if(d.mode==="time"){ TIME_NAMES.add(d.name.toLowerCase()); const a=altName(d); if(a) TIME_NAMES.add(a.toLowerCase()); }}));
+function isTimeName(n){ return TIME_NAMES.has(String(n||"").toLowerCase()); }
+
 /* ---------- storage: single versioned store, autosave, safe fallback ---------- */
 function seed(){
   return {
     app:APP, schema:SCHEMA, created:todayISO(),
-    program:{block:"Block 1 — Re-entry", week:1},
+    program:{i:0, done:0},
     history:[{
-      date:"2026-07-05", day:"A", exercises:[
+      date:"2026-07-05", day:"A", block:0, exercises:[
         {name:"Goblet Squat", sets:[{rep:"10",wt:"35",rpe:""},{rep:"10",wt:"35",rpe:"7-8"},{rep:"10",wt:"35",rpe:"7-8"}], note:"quad cramp after S1 — pushed through"},
         {name:"DB Incline Press", sets:[{rep:"11",wt:"25",rpe:""},{rep:"11",wt:"25",rpe:""},{rep:"11",wt:"25",rpe:""}]},
         {name:"Chest-Supported Row", sets:[{rep:"11",wt:"45",rpe:""},{rep:"11",wt:"45",rpe:""},{rep:"11",wt:"45",rpe:""}]},
@@ -423,8 +530,13 @@ const MIGRATIONS = {
     }
     delete d.session;
     return d;
-  }
-  // future: 3: d => {...}
+  },
+  3: d => { // introduce the block engine: normalize program state, tag prior history as Block 1
+    const old=d.program||{};
+    d.program = (typeof old.i==="number") ? {i:old.i, done:old.done||0} : {i:0, done:0};
+    (d.history||[]).forEach(h=>{ if(h.block==null) h.block=0; });
+    return d;
+  },
 };
 function migrate(d){
   if(!d) return d;
@@ -434,6 +546,10 @@ function migrate(d){
   // invariant regardless of path: sessions is an object with A/B/C keys
   if(!d.sessions || typeof d.sessions!=="object") d.sessions = {A:null, B:null, C:null};
   ["A","B","C"].forEach(k=>{ if(d.sessions[k]===undefined) d.sessions[k]=null; });
+  // invariant: program is {i,done} with i in range
+  if(!d.program || typeof d.program.i!=="number") d.program={i:0, done:0};
+  d.program.i=Math.max(0, Math.min(BLOCKS.length-1, d.program.i|0));
+  d.program.done=Math.max(0, d.program.done|0);
   return d;
 }
 let db, memOnly=false, saveT;
@@ -463,6 +579,9 @@ window.addEventListener("pagehide", ()=>{ if(dirty) writeNow(); });
 document.addEventListener("visibilitychange", ()=>{ if(document.hidden && dirty) writeNow(); });
 db = load() || seed();
 persist(); // bake seed/migration into storage on boot
+/* active program for the current block — rebuilt whenever the block changes */
+let PROGRAM = blockProgram(db.program.i);
+function rebuildProgram(){ PROGRAM = blockProgram(db.program.i); }
 
 function flashSaved(){ const el=$("saveInd"); if(!el)return;
   el.textContent = memOnly ? "in-memory ⚠" : "saved ✓";
@@ -576,7 +695,33 @@ function demoUrl(def){
 function altName(def){
   return String(def.sub||"").replace(/\s*\(.*?\)\s*/g," ").replace(/\s+\d+\s*×.*$/,"").trim();
 }
+/* block panel + header line: current block, week, session progress, and the
+   evaluation from the last transition (with a copy-to-Claude export). */
+function renderBlock(){
+  const blk=BLOCKS[db.program.i], done=db.program.done||0, wk=blockWeek(), num=db.program.i+1;
+  const bl=$("blockLine"); if(bl) bl.textContent=`Block ${num} “${blk.name}” · Wk ${wk}/${blk.weeks}`;
+  const p=$("blockPanel"); if(!p) return;
+  const pct=Math.min(100, Math.round(done/blk.sessions*100)), rv=db.lastReview;
+  p.innerHTML=`
+    <div class="bhead"><div class="bname">Block ${num} · <b>${esc(blk.name)}</b></div><div class="bwk">Week ${wk} / ${blk.weeks}</div></div>
+    <div class="bfocus">${esc(blk.focus)} — ${esc(blk.note)}</div>
+    <div class="bbar"><i style="width:${pct}%"></i></div>
+    <div class="bmeta"><span class="bcount">${done} / ${blk.sessions} sessions${done>=blk.sessions?" — ready to advance":""}</span>
+      <button class="blink" id="bAdvance" type="button">Advance now ›</button></div>
+    ${rv?`<div class="breview"><div class="rtitle">↻ Review — advanced to ${esc(rv.to)}</div>
+      <pre>${esc(rv.text)}</pre>
+      <div class="ract"><button class="blink" id="bCopyReview" type="button">📋 Copy review for Claude</button>
+        <button class="blink" id="bDismiss" type="button">Dismiss</button></div></div>`:""}`;
+  const adv=$("bAdvance"); if(adv) adv.onclick=()=>{
+    if(!confirm(`Advance now? This closes “${blk.name}” and starts the next block, clearing any in-progress sessions.`)) return;
+    advanceBlock(); persist(); renderBlock(); renderTrain(); renderTrends();
+    showToast(`Now in “${BLOCKS[db.program.i].name}” 🎯`);
+  };
+  const cp=$("bCopyReview"); if(cp&&rv) cp.onclick=()=>copyText(rv.text,"Block review copied for Claude 📋");
+  const dm=$("bDismiss"); if(dm) dm.onclick=()=>{ db.lastReview=null; persist(); renderBlock(); };
+}
 function renderTrain(){
+  renderBlock();
   ensureSession(); renderDayTabs(); renderWarm();
   const defs=PROGRAM[curDay].ex, list=$("exlist"); list.innerHTML="";
   const sess=curSession();
@@ -614,7 +759,7 @@ function renderTrain(){
       <div class="head">
         <div class="num">${i+1}</div>
         <div class="hmeta">
-          <div class="ename">${esc(eff.name)}${swapped?`<span class="chip swap">⇄ swapped</span>`:""}</div>
+          <div class="ename">${esc(eff.name)}${swapped?`<span class="chip swap">⇄ swapped</span>`:(def.rotated?`<span class="new blk">🔄 new this block</span>`:"")}</div>
           <div class="esub"><span>${setword}</span><span class="chip">${esc(def.tag)}</span>
             ${def.rpe!=="—"?`<span class="chip rpe">RPE ${def.rpe}</span>`:""}
             ${rx.fresh?`<span class="new">🆕</span>`:(rx.wt!=null?`<span class="chip rx">▶ ${rx.wt} lb</span>`:"")}
@@ -756,15 +901,36 @@ $("finishBtn").onclick=()=>{
   const sess=curSession();
   const touched=sess.data.some(x=>x.done||x.sets.some(s=>s.rep!==""));
   if(!touched){ showToast("Nothing logged yet — enter at least one set"); return; }
-  const entry={date:sess.date, day:sess.day,
+  const entry={date:sess.date, day:sess.day, block:db.program.i,
     exercises:sess.data.filter(x=>x.done||x.sets.some(s=>s.rep!=="")).map(x=>({
       name:x.name, sets:x.sets.map(s=>({rep:s.rep,wt:s.wt,rpe:s.rpe||""}))}))};
   db.history.push(entry);
   const text=sessionLogText(sess);
-  db.sessions[curDay]=null; persist(); // clear only the completed day
-  renderTrain(); renderTrends();
-  copyText(text,"Session banked ✓ — log copied for Claude");
+  db.sessions[curDay]=null;                 // clear the completed day
+  // auto-advance: one more session banked toward this block's target
+  db.program.done=(db.program.done||0)+1;
+  let advanced=false;
+  if(db.program.done>=BLOCKS[db.program.i].sessions){ advanceBlock(); advanced=true; }
+  persist();
+  renderBlock(); renderTrain(); renderTrends();
+  if(advanced){
+    // surface the review; the copied session log still went to the clipboard is deferred to the review copy
+    showToast(`Block complete → now in “${BLOCKS[db.program.i].name}” 🎯`);
+  } else {
+    copyText(text,"Session banked ✓ — log copied for Claude");
+  }
 };
+/* Evaluate the block just finished, roll into the next, and stash the review
+   for the Block panel. Any half-entered sessions are cleared so they rebuild
+   against the new block's targets. */
+function advanceBlock(){
+  const from=db.program.i;
+  db.lastReview={text:blockReviewText(evaluateBlock(from)), from:BLOCKS[from].name, to:BLOCKS[nextBlockIndex(from)].name, date:todayISO()};
+  db.program={i:nextBlockIndex(from), done:0};
+  db.sessions={A:null,B:null,C:null};
+  rebuildProgram();
+  curDay="A";
+}
 
 /* ---------- telemetry wing ---------- */
 const T={date:todayISO(),energy:null,fuel:null,sleep:"",hrv:"",rhr:"",protein:"",cal:"",water:"",weight:"",deep:"",rem:"",meta:null,glp1:""};
@@ -868,15 +1034,14 @@ function renderTrends(){
   });
 }
 function historyLogText(h){
-  const defs=(PROGRAM[h.day]||{ex:[]}).ex;
   const lines=[`Full Body ${h.day} — ${h.date}`];
   h.exercises.forEach(e=>{
-    const def=defs.find(d=>d.name===e.name)||{};
+    const timed=isTimeName(e.name);
     const reps=e.sets.map(x=>x.rep).filter(v=>v!=="");
     const wts=e.sets.map(x=>x.wt).filter(v=>v!=="");
-    const unit=def.mode==="time"?"s":"";
+    const unit=timed?"s":"";
     let w="";
-    if(def.mode!=="time"){ if(wts.length){const u=[...new Set(wts)];w=" @ "+(u.length===1?u[0]:wts.join("/"));} else w=" @ BW"; }
+    if(!timed){ if(wts.length){const u=[...new Set(wts)];w=" @ "+(u.length===1?u[0]:wts.join("/"));} else w=" @ BW"; }
     lines.push(`${e.name}${w} / ${reps.map(r=>r+unit).join(",")}`);
   });
   return lines.join("\n");
@@ -908,7 +1073,7 @@ $("vFile").addEventListener("change",e=>{
       if(!confirm(`Restore backup from ${d.exported||"unknown date"}? This replaces current data (${db.history.length} sessions).`)) return;
       db=migrate({app:APP,schema:SCHEMA,created:d.created||todayISO(),program:d.program||db.program,
           history:d.history,telemetry:d.telemetry,sessions:d.sessions,session:d.session});
-      persist(); curDay=["A","B","C"].find(x=>db.sessions[x])||"A";
+      persist(); curDay=["A","B","C"].find(x=>db.sessions[x])||"A"; rebuildProgram();
       renderTrain(); renderTrends(); showToast("Backup restored ✓");
     }catch(err){ showToast("That file isn't a valid Q Branch backup"); }
     e.target.value="";
@@ -943,7 +1108,7 @@ $("vReset").onclick=()=>{
   if(!confirm("Erase ALL local Q Branch data? Export a backup first — this cannot be undone."))return;
   if(!confirm("Last check: really erase everything?"))return;
   try{localStorage.removeItem(DB_KEY);}catch(e){}
-  db=seed(); persist(); curDay="A";
+  db=seed(); persist(); curDay="A"; rebuildProgram();
   renderTrain(); renderTrends(); showToast("Reset — reseeded with your 07-05 baseline");
 };
 
