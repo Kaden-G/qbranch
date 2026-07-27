@@ -57,6 +57,9 @@
   .daytab small{display:block;font-size:10px;font-style:normal;font-weight:700;color:var(--muted2);letter-spacing:.3px;margin-top:2px;text-transform:uppercase}
   .daytab.on{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(165,50,74,.35)}
   .daytab.on small{color:rgba(255,255,255,.75)}
+  .expressbtn{display:block;width:calc(100% - 36px);margin:10px 18px 0;background:var(--surface);color:var(--amber);
+    border:1px solid var(--line);border-radius:12px;padding:11px;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;transition:.15s}
+  .expressbtn.on{border-color:var(--amber);background:rgba(232,177,90,.08)}
 
   .note{margin:12px 18px 0;background:var(--surface);border:1px solid var(--line);border-radius:12px;
     padding:10px 13px;font-size:12.5px;line-height:1.5;color:var(--muted);display:flex;gap:9px;align-items:flex-start}
@@ -240,6 +243,7 @@
 <div class="page on" id="pg-train">
   <div class="bpanel" id="blockPanel"></div>
   <div class="daytabs" id="daytabs"></div>
+  <button class="expressbtn" id="expressBtn" type="button"></button>
   <div class="note" id="resumeNote" style="display:none">↩︎ <span><b>Resumed your in-progress session.</b> Everything you'd entered is intact.</span></div>
   <div class="note">🛟 <span><b>Auto-saves on every tap.</b> Lock your phone, switch apps, close the tab — your session survives on this device. Finish with “Complete session” to bank it into History.</span></div>
   <div class="sect"><h2>Warm-up</h2><span class="meta">~4m</span></div>
@@ -417,6 +421,29 @@ const BASE = {
       {name:"Pallof Press",tag:"Core · Anti-rotation",muscle:"Core",sets:3,lo:8,hi:8,rpe:"—",rpeMax:null,rest:45,mode:"time",inc:0,ss:"A",
        cues:"8/side, 2s hold pressed out. <b>Hips and shoulders square</b> — resist the twist.",sub:"Dead bug"},
     ]}
+};
+
+/* ---------- EXPRESS — busy-day / can't-make-it-in fallback ----------
+   A single block-neutral full-body circuit: mostly bodyweight plus the
+   one 35 lb kettlebell. Any gym day (A/B/C) can be swapped to this in one
+   tap; completing it banks and advances the block exactly like a full day.
+   Guardrail-aware: KB rows brace the free hand (spares the back), reverse
+   lunges + heel-elevate cues respect the right ankle. */
+const EXPRESS = {
+  focus:"Express · busy-day full-body",
+  warm:[["March in place or stairs, easy","2 min"],["Arm + hip circles","×10 each"]],
+  ex:[
+    {name:"KB Goblet Squat",tag:"Legs · KB",muscle:"Legs",sets:3,lo:10,hi:15,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
+     cues:"Hold the 35 at your chest, tall spine. <b>Heel-elevate</b> if the ankle limits depth.",sub:"Bodyweight squat"},
+    {name:"Push-up",tag:"Push · Bodyweight",muscle:"Chest",sets:3,lo:8,hi:15,rpe:"8",rpeMax:8,rest:60,mode:"wt",inc:0,
+     cues:"Ribs down, body in one line. <b>Hands to a couch or counter</b> to scale — keep the reps honest.",sub:"Incline push-up"},
+    {name:"KB Single-Arm Row",tag:"Pull · KB",muscle:"Back",sets:3,lo:10,hi:12,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
+     cues:"<b>Free hand braced on your thigh</b> — takes the low back out of it. 10–12/side. Drive the elbow back, squeeze.",sub:"Table row"},
+    {name:"Reverse Lunge",tag:"Single-leg · Ankle-aware",muscle:"Legs",sets:2,lo:8,hi:12,rpe:"7",rpeMax:7,rest:60,mode:"wt",inc:0,
+     cues:"Step <b>back, not forward</b> — kinder to the right ankle. 8–12/side; hold the KB at your chest to load it up.",sub:"Bodyweight squat"},
+    {name:"Plank",tag:"Core · Anti-extension",muscle:"Core",sets:3,lo:30,hi:45,rpe:"—",rpeMax:null,rest:45,mode:"time",inc:0,
+     cues:"Brace hard, ribs down, glutes tight — <b>protects the back</b>.",sub:"Dead bug"},
+  ]
 };
 
 /* ================= BLOCK ENGINE — deterministic periodization =================
@@ -654,8 +681,43 @@ function freshSession(day){
   return {date:todayISO(), day, data:PROGRAM[day].ex.map(d=>({
     name:d.name, sets:Array.from({length:d.sets},()=>({rep:"",wt:"",rpe:""})), done:false, open:false}))};
 }
+/* Express (busy-day) session for a day — same shape, flagged so the template
+   resolver, warm-up, log-copy and render all follow the EXPRESS circuit. */
+function freshExpress(day){
+  return {date:todayISO(), day, express:true, data:EXPRESS.ex.map(d=>({
+    name:d.name, sets:Array.from({length:d.sets},()=>({rep:"",wt:"",rpe:""})), done:false, open:false}))};
+}
+/* The effective template for a day: EXPRESS when that day's session is flagged
+   express, otherwise the block-derived program day. */
+function dayTpl(day){ const s=db.sessions[day]; return (s&&s.express)?EXPRESS:PROGRAM[day]; }
 function ensureSession(){
   if(!db.sessions[curDay]){ db.sessions[curDay]=freshSession(curDay); persist(); }
+}
+/* One-tap swap between the full gym day and the Express circuit. Swapping
+   rebuilds the current day's session, so a two-tap "arm" guards against
+   wiping anything already logged. */
+let expressArm=null;
+function updateExpressBtn(){
+  const b=$("expressBtn"); if(!b) return;
+  const s=curSession(), exp=!!(s&&s.express);
+  b.classList.toggle("on",exp);
+  b.textContent = expressArm ? "⚠︎ Tap again to switch — clears this day"
+    : exp ? `↩︎ Back to full Day ${curDay}`
+    : "⚡ Express workout — short on time?";
+}
+function toggleExpress(){
+  ensureSession();
+  const s=curSession(), exp=!!s.express;
+  const hasData=s.data.some(x=>x.done||x.sets.some(v=>v.rep!==""));
+  if(hasData && !expressArm){                       // arm, don't wipe on the first tap
+    expressArm=setTimeout(()=>{expressArm=null;updateExpressBtn();},4000);
+    updateExpressBtn(); showToast("This clears what you've logged today — tap again to confirm");
+    return;
+  }
+  if(expressArm){clearTimeout(expressArm);expressArm=null;}
+  db.sessions[curDay]= exp ? freshSession(curDay) : freshExpress(curDay);
+  persist(); renderTrain();
+  showToast(exp?`Back to full Day ${curDay} ✓`:"⚡ Express workout ready");
 }
 /* show resume note if any day already holds logged reps from a prior visit */
 if(["A","B","C"].some(d=>db.sessions[d] && db.sessions[d].data.some(x=>x.sets.some(s=>s.rep!=="")))){
@@ -675,6 +737,7 @@ function renderDayTabs(){
     b.onclick=()=>{
       if(d===curDay) return;
       // per-day sessions: switching is non-destructive — each day keeps its own inputs
+      if(expressArm){clearTimeout(expressArm);expressArm=null;} // don't carry a pending arm across days
       curDay=d;
       ensureSession(); renderTrain();
     };
@@ -682,7 +745,7 @@ function renderDayTabs(){
   });
 }
 function renderWarm(){
-  $("warmlist").innerHTML = PROGRAM[curDay].warm.map(w=>
+  $("warmlist").innerHTML = dayTpl(curDay).warm.map(w=>
     `<div class="warm-item"><span class="dot"></span>${esc(w[0])}<span class="r">${esc(w[1])}</span></div>`).join("");
 }
 /* Demo video for an exercise. A curated URL can be pinned per exercise via a
@@ -726,7 +789,8 @@ function renderBlock(){
 function renderTrain(){
   renderBlock();
   ensureSession(); renderDayTabs(); renderWarm();
-  const defs=PROGRAM[curDay].ex, list=$("exlist"); list.innerHTML="";
+  $("expressBtn").onclick=toggleExpress; updateExpressBtn();
+  const defs=dayTpl(curDay).ex, list=$("exlist"); list.innerHTML="";
   const sess=curSession();
   defs.forEach((def,i)=>{
     const st=sess.data[i];
@@ -881,8 +945,8 @@ $("timerX").onclick=()=>{clearInterval(timerIv);timerIv=null;clearTimeout(hideIv
 
 /* ---------- session log builder + finish ---------- */
 function sessionLogText(sess){
-  const defs=PROGRAM[sess.day].ex;
-  const lines=[`Full Body ${sess.day} — ${sess.date}`];
+  const defs=(sess.express?EXPRESS:PROGRAM[sess.day]).ex;
+  const lines=[`${sess.express?"Express":"Full Body"} ${sess.day} — ${sess.date}`];
   sess.data.forEach((st,i)=>{
     const def=defs[i]||{};
     const reps=st.sets.map(x=>x.rep).filter(v=>v!=="");
