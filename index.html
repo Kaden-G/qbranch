@@ -282,6 +282,7 @@
   <div class="numrow">
     <div class="tcard"><div class="tlbl"><span class="name">HRV</span><span class="unit">ms</span></div><input type="number" id="tHrv" inputmode="numeric" placeholder="—"></div>
     <div class="tcard"><div class="tlbl"><span class="name">RHR</span><span class="unit">bpm</span></div><input type="number" id="tRhr" inputmode="numeric" placeholder="—"></div>
+    <div class="tcard"><div class="tlbl"><span class="name">Steps</span><span class="unit">walk</span></div><input type="number" id="tSteps" inputmode="numeric" placeholder="—"></div>
   </div>
   <details><summary>More metrics · weekly depth <span class="tw">›</span></summary>
     <div class="depth">
@@ -935,7 +936,7 @@ function advanceBlock(){
 }
 
 /* ---------- telemetry wing ---------- */
-const T={date:todayISO(),energy:null,fuel:null,sleep:"",hrv:"",rhr:"",protein:"",cal:"",water:"",weight:"",deep:"",rem:"",meta:null,glp1:""};
+const T={date:todayISO(),energy:null,fuel:null,sleep:"",hrv:"",rhr:"",steps:"",protein:"",cal:"",water:"",weight:"",deep:"",rem:"",meta:null,glp1:""};
 $("tDate").value=T.date;
 $("tDate").addEventListener("change",e=>{T.date=e.target.value;renderTele();});
 const eW=$("tEnergy");
@@ -953,7 +954,7 @@ sW.addEventListener("click",e=>{const c=e.target.closest(".tchip");if(!c)return;
   [...sW.children].forEach(x=>x.className="tchip"+(x===c?" on":""));renderTele();});
 $("tMeta").addEventListener("click",e=>{const c=e.target.closest(".tchip");if(!c)return;
   T.meta=c.dataset.v;[...$("tMeta").children].forEach(x=>x.className="tchip"+(x===c?" on"+(c.dataset.v==="Y"?" good":" warn"):""));renderTele();});
-[["tSleep","sleep"],["tHrv","hrv"],["tRhr","rhr"],["tProtein","protein"],["tCal","cal"],["tWater","water"],
+[["tSleep","sleep"],["tHrv","hrv"],["tRhr","rhr"],["tSteps","steps"],["tProtein","protein"],["tCal","cal"],["tWater","water"],
  ["tWeight","weight"],["tDeep","deep"],["tRem","rem"],["tGlp1","glp1"]].forEach(([id,k])=>{
   $(id).addEventListener("input",e=>{T[k]=e.target.value.trim();
     if(k==="sleep"){[...sW.children].forEach(x=>x.className="tchip"+(x.dataset.v===e.target.value?" on":""));}
@@ -966,6 +967,7 @@ function teleParts(){
   if(T.sleep!=="")p.push(["sleep",T.sleep+"h"]);
   if(T.hrv!=="")p.push(["HRV",T.hrv]);
   if(T.rhr!=="")p.push(["RHR",T.rhr]);
+  if(T.steps!=="")p.push(["steps",T.steps]);
   if(T.deep!=="")p.push(["deep",T.deep+"h"]);
   if(T.rem!=="")p.push(["REM",T.rem+"h"]);
   if(T.protein!=="")p.push(["protein",T.protein+"g"]);
