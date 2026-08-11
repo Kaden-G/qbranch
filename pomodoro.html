@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f1226">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<title>Focus Forge — Pomodoro & Break Planner</title>
+<style>
+  :root{
+    --bg:#0f1226; --bg2:#161a3a; --card:#1c2150; --card2:#232a63;
+    --ink:#eef1ff; --muted:#9aa3d4; --line:#2c3470;
+    --focus:#ff6b6b; --focus2:#ff8e8e;
+    --short:#4ecdc4; --short2:#7ff0e8;
+    --long:#a78bfa; --long2:#c4b5fd;
+    --gold:#ffd166; --good:#51e0a3;
+    --accent:var(--focus); --accent2:var(--focus2);
+    --shadow:0 10px 40px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(167,139,250,.18), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(78,205,196,.16), transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+    padding:16px;
+    padding:calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+  }
+  .wrap{max-width:920px;margin:0 auto}
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;margin-bottom:16px;flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{
+    width:38px;height:38px;border-radius:11px;
+    background:linear-gradient(135deg,var(--focus),var(--long));
+    display:grid;place-items:center;font-size:20px;box-shadow:var(--shadow);
+  }
+  .brand h1{font-size:19px;margin:0;letter-spacing:.3px}
+  .brand p{margin:0;font-size:12px;color:var(--muted)}
+  .stats{display:flex;gap:8px;flex-wrap:wrap}
+  .stat{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:7px 11px;text-align:center;min-width:64px;
+  }
+  .stat .k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+  .stat .v{font-size:17px;font-weight:700;margin-top:2px}
+  .stat .v small{font-size:11px;color:var(--muted);font-weight:600}
+
+  .grid{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:760px){ .grid{grid-template-columns:1.15fr .85fr} }
+
+  .card{
+    background:linear-gradient(180deg,var(--card),var(--bg2));
+    border:1px solid var(--line);border-radius:20px;padding:20px;
+    box-shadow:var(--shadow);
+  }
+
+  /* Timer */
+  .modes{display:flex;gap:8px;margin-bottom:18px;justify-content:center;flex-wrap:wrap}
+  .mode{
+    background:transparent;border:1px solid var(--line);color:var(--muted);
+    padding:8px 14px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;
+    transition:.2s;
+  }
+  .mode[aria-pressed="true"]{
+    background:var(--accent);border-color:var(--accent);color:#12142e;
+    box-shadow:0 6px 18px rgba(0,0,0,.35);
+  }
+  .ringwrap{position:relative;width:280px;height:280px;margin:6px auto 10px;max-width:78vw}
+  svg.ring{transform:rotate(-90deg);width:100%;height:100%}
+  .ring circle{fill:none;stroke-linecap:round}
+  .track{stroke:rgba(255,255,255,.08)}
+  .prog{stroke:var(--accent);transition:stroke-dashoffset .35s linear, stroke .3s}
+  .center{
+    position:absolute;inset:0;display:grid;place-content:center;text-align:center;gap:2px;
+  }
+  .time{font-size:58px;font-weight:800;letter-spacing:1px;font-variant-numeric:tabular-nums}
+  .phase{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:2px}
+  .roundcue{font-size:12px;color:var(--muted);margin-top:2px}
+  .dots{display:flex;gap:6px;justify-content:center;margin-top:6px}
+  .dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.16)}
+  .dot.on{background:var(--gold);box-shadow:0 0 10px var(--gold)}
+
+  .controls{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+  button.btn{
+    border:none;border-radius:14px;padding:13px 22px;font-size:15px;font-weight:700;
+    cursor:pointer;transition:.15s;color:#12142e;
+  }
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));min-width:140px}
+  .btn.primary:active{transform:translateY(1px)}
+  .btn.ghost{background:var(--card2);color:var(--ink);border:1px solid var(--line)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+
+  .now-doing{
+    margin-top:16px;background:var(--card2);border:1px solid var(--line);
+    border-radius:14px;padding:12px 14px;font-size:14px;display:none;
+  }
+  .now-doing.show{display:block}
+  .now-doing b{color:var(--short2)}
+
+  /* Break picker */
+  h2{font-size:15px;margin:0 0 4px;display:flex;align-items:center;gap:8px}
+  .sub{font-size:12px;color:var(--muted);margin:0 0 12px}
+  .addrow{display:flex;gap:8px;margin-bottom:12px}
+  .addrow input{
+    flex:1;background:var(--bg);border:1px solid var(--line);border-radius:12px;
+    color:var(--ink);padding:11px 13px;font-size:14px;outline:none;
+  }
+  .addrow input:focus{border-color:var(--accent)}
+  .addrow button{
+    background:var(--accent);color:#12142e;border:none;border-radius:12px;
+    padding:0 16px;font-weight:700;font-size:18px;cursor:pointer;
+  }
+  ul.acts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;max-height:320px;overflow:auto}
+  li.act{
+    display:flex;align-items:center;gap:10px;
+    background:var(--bg);border:1px solid var(--line);border-radius:12px;
+    padding:10px 12px;transition:.15s;
+  }
+  li.act .em{font-size:18px}
+  li.act .txt{flex:1;font-size:14px;word-break:break-word}
+  li.act .cnt{font-size:11px;color:var(--muted);background:var(--card2);border-radius:999px;padding:2px 8px}
+  li.act .x{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px}
+  li.act .x:hover{color:var(--focus)}
+  .empty{color:var(--muted);font-size:13px;text-align:center;padding:18px 8px;border:1px dashed var(--line);border-radius:12px}
+  .seed{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .seed button{
+    background:transparent;border:1px solid var(--line);color:var(--muted);
+    font-size:12px;border-radius:999px;padding:5px 10px;cursor:pointer;transition:.15s;
+  }
+  .seed button:hover{border-color:var(--accent);color:var(--ink)}
+
+  /* Break overlay */
+  .overlay{
+    position:fixed;inset:0;background:rgba(8,10,26,.86);backdrop-filter:blur(6px);
+    display:none;place-items:center;z-index:50;padding:20px;
+  }
+  .overlay.show{display:grid}
+  .breakcard{
+    background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);
+    border-radius:22px;padding:26px;max-width:420px;width:100%;text-align:center;box-shadow:var(--shadow);
+  }
+  .breakcard h3{margin:0 0 6px;font-size:22px}
+  .breakcard p{color:var(--muted);font-size:14px;margin:0 0 16px}
+  .picks{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+  .pick{
+    background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:13px;
+    font-size:15px;cursor:pointer;color:var(--ink);text-align:left;display:flex;gap:10px;align-items:center;transition:.15s;
+  }
+  .pick:hover{border-color:var(--short);background:var(--card2)}
+  .breakcard .reroll{background:none;border:none;color:var(--short2);font-size:13px;cursor:pointer;text-decoration:underline}
+
+  /* Achievements */
+  .badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+  .badge{
+    display:flex;align-items:center;gap:6px;font-size:12px;padding:6px 10px;border-radius:999px;
+    background:var(--bg);border:1px solid var(--line);color:var(--muted);
+  }
+  .badge.got{color:var(--ink);border-color:var(--gold);background:rgba(255,209,102,.1)}
+  .badge .e{font-size:14px;filter:grayscale(1);opacity:.5}
+  .badge.got .e{filter:none;opacity:1}
+
+  .levelbar{height:9px;background:var(--bg);border-radius:999px;overflow:hidden;border:1px solid var(--line);margin-top:8px}
+  .levelfill{height:100%;background:linear-gradient(90deg,var(--gold),var(--good));width:0;transition:width .5s}
+  .lvlmeta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px}
+
+  .settings{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px}
+  .setfield{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:9px 11px}
+  .setfield label{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+  .setfield input{width:100%;background:transparent;border:none;color:var(--ink);font-size:18px;font-weight:700;outline:none;font-variant-numeric:tabular-nums}
+  .toggles{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:13px;color:var(--muted)}
+  .toggles label{display:flex;align-items:center;gap:7px;cursor:pointer}
+
+  .footer{text-align:center;color:var(--muted);font-size:11px;margin-top:22px;line-height:1.6}
+  .footer a{color:var(--short2);text-decoration:none}
+
+  /* Toast */
+  #toast{
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);
+    background:var(--card2);border:1px solid var(--gold);color:var(--ink);
+    padding:12px 18px;border-radius:14px;font-size:14px;font-weight:600;
+    box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.3s;z-index:80;max-width:90vw;
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* Confetti */
+  #fx{position:fixed;inset:0;pointer-events:none;z-index:70}
+
+  .collapse-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;margin-left:auto}
+  details summary{cursor:pointer;list-style:none;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
+  details summary::-webkit-details-marker{display:none}
+  details summary .chev{margin-left:auto;color:var(--muted);transition:.2s}
+  details[open] summary .chev{transform:rotate(180deg)}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo">🔥</div>
+      <div>
+        <h1>Focus Forge</h1>
+        <p>Pomodoro timer · plan your breaks · earn the streak</p>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="k">Today</div><div class="v" id="stToday">0<small> 🍅</small></div></div>
+      <div class="stat"><div class="k">Streak</div><div class="v" id="stStreak">0<small> 🔥</small></div></div>
+      <div class="stat"><div class="k">Level</div><div class="v" id="stLevel">1</div></div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- TIMER -->
+    <section class="card" id="timerCard">
+      <div class="modes" role="group" aria-label="Timer mode">
+        <button class="mode" data-mode="focus" aria-pressed="true">🎯 Focus</button>
+        <button class="mode" data-mode="short" aria-pressed="false">☕ Short Break</button>
+        <button class="mode" data-mode="long" aria-pressed="false">🌴 Long Break</button>
+      </div>
+
+      <div class="ringwrap">
+        <svg class="ring" viewBox="0 0 240 240" aria-hidden="true">
+          <circle class="track" cx="120" cy="120" r="110" stroke-width="14"></circle>
+          <circle class="prog" id="ring" cx="120" cy="120" r="110" stroke-width="14"
+                  stroke-dasharray="691.15" stroke-dashoffset="0"></circle>
+        </svg>
+        <div class="center">
+          <div class="phase" id="phaseLabel">Focus</div>
+          <div class="time" id="timeText" aria-live="off">25:00</div>
+          <div class="roundcue" id="roundCue">Round 1 of 4</div>
+          <div class="dots" id="dots"></div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn primary" id="startBtn">▶ Start</button>
+        <button class="btn ghost" id="resetBtn">↺ Reset</button>
+        <button class="btn ghost" id="skipBtn">⏭ Skip</button>
+      </div>
+
+      <div class="now-doing" id="nowDoing">On this break: <b id="nowDoingText"></b></div>
+    </section>
+
+    <!-- BREAK PLANNER -->
+    <section class="card">
+      <h2>🎲 Break Menu</h2>
+      <p class="sub">Fill this in each day. When a break starts, pick something fun to do.</p>
+      <div class="addrow">
+        <input id="actInput" type="text" placeholder="e.g. 10 push-ups, water the plants…" maxlength="80" aria-label="New break activity">
+        <button id="addBtn" aria-label="Add activity">+</button>
+      </div>
+      <ul class="acts" id="actList"></ul>
+      <div id="actEmpty" class="empty">No activities yet. Add a few, or tap a suggestion below 👇</div>
+      <div class="seed" id="seedRow"></div>
+    </section>
+  </div>
+
+  <div class="grid" style="margin-top:16px">
+    <!-- PROGRESS / GAMIFICATION -->
+    <section class="card">
+      <h2>🏆 Progress</h2>
+      <div class="lvlmeta"><span>Level <b id="lvlNum">1</b> · <span id="lvlTitle">Kindling</span></span><span id="xpMeta">0 / 100 XP</span></div>
+      <div class="levelbar"><div class="levelfill" id="lvlFill"></div></div>
+      <p class="sub" style="margin-top:14px">Daily goal: <b id="goalText">0 / 8</b> focus sessions</p>
+      <div class="levelbar"><div class="levelfill" id="goalFill" style="background:linear-gradient(90deg,var(--focus),var(--long))"></div></div>
+      <h2 style="margin-top:18px">Badges</h2>
+      <div class="badges" id="badges"></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="card">
+      <details id="settingsWrap">
+        <summary>⚙️ Settings <span class="chev">▾</span></summary>
+        <div class="settings">
+          <div class="setfield"><label>Focus (min)</label><input id="setFocus" type="number" min="1" max="90" inputmode="numeric"></div>
+          <div class="setfield"><label>Short (min)</label><input id="setShort" type="number" min="1" max="60" inputmode="numeric"></div>
+          <div class="setfield"><label>Long (min)</label><input id="setLong" type="number" min="1" max="60" inputmode="numeric"></div>
+          <div class="setfield"><label>Rounds → long</label><input id="setRounds" type="number" min="2" max="8" inputmode="numeric"></div>
+          <div class="setfield"><label>Daily goal</label><input id="setGoal" type="number" min="1" max="20" inputmode="numeric"></div>
+        </div>
+        <div class="toggles">
+          <label><input type="checkbox" id="setSound"> 🔔 Sound</label>
+          <label><input type="checkbox" id="setAuto"> ⏩ Auto-start next</label>
+          <label><input type="checkbox" id="setNotify"> 💬 Notifications</label>
+        </div>
+        <p class="sub" style="margin-top:14px">Data stays on this device (localStorage). <button class="collapse-btn" id="resetAll" style="color:var(--focus)">Reset all progress</button></p>
+      </details>
+    </section>
+  </div>
+
+  <div class="footer">
+    Focus Forge · a local-first pomodoro planner — no accounts, no tracking, works offline.<br>
+    Tip: keep this tab open. Your streak counts one day at a time. 🔥
+  </div>
+</div>
+
+<!-- Break overlay -->
+<div class="overlay" id="overlay">
+  <div class="breakcard">
+    <h3 id="ovTitle">Break time! ☕</h3>
+    <p id="ovSub">Pick a reward activity — you earned it.</p>
+    <div class="picks" id="ovPicks"></div>
+    <button class="reroll" id="ovReroll">🎲 Shuffle suggestions</button>
+    <div style="margin-top:14px">
+      <button class="btn ghost" id="ovSkip">Just rest →</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  var LS = "focusForge.v1";
+  var $ = function(id){return document.getElementById(id);};
+
+  /* ---------- Emoji guesser for activities ---------- */
+  function emojiFor(t){
+    t = t.toLowerCase();
+    var map = [
+      [/push|squat|plank|jump|stretch|yoga|exercise|workout|burpee|lunge|core|abs/,"💪"],
+      [/walk|steps|stairs|stroll|pace/,"🚶"],
+      [/water|drink|hydrate|tea|coffee|snack|eat|fruit/,"💧"],
+      [/breath|medit|calm|relax|rest|nap|eyes/,"🧘"],
+      [/read|book|article|study/,"📖"],
+      [/music|song|dance|sing/,"🎵"],
+      [/plant|garden|flower/,"🪴"],
+      [/pet|dog|cat|walk the/,"🐾"],
+      [/tidy|clean|dishes|laundry|organize/,"🧹"],
+      [/call|text|friend|message|chat/,"📞"],
+      [/draw|sketch|paint|art|journal|write/,"✍️"],
+      [/game|play|puzzle/,"🎮"],
+      [/sun|outside|fresh air|balcony|window/,"🌤️"],
+      [/email|inbox|admin/,"📧"]
+    ];
+    for(var i=0;i<map.length;i++){ if(map[i][0].test(t)) return map[i][1]; }
+    return "✨";
+  }
+
+  var SEEDS = ["Stretch for 2 min","10 push-ups","Drink a glass of water","Look out the window","5 deep breaths","Quick tidy of desk","Walk to another room","Text a friend","2-min dance break","Water the plants"];
+
+  var BADGES = [
+    {id:"first",   e:"🌱", name:"First Spark",   test:function(s){return s.totalFocus>=1;}},
+    {id:"five",    e:"🔥", name:"On Fire (5)",   test:function(s){return s.totalFocus>=5;}},
+    {id:"quarter", e:"⚡", name:"Quarter Century",test:function(s){return s.totalFocus>=25;}},
+    {id:"streak3", e:"📅", name:"3-Day Streak",  test:function(s){return s.streak>=3;}},
+    {id:"streak7", e:"🏅", name:"Week Warrior",  test:function(s){return s.streak>=7;}},
+    {id:"goal",    e:"🎯", name:"Goal Crusher",  test:function(s){return s.metGoalToday;}},
+    {id:"lvl5",    e:"⭐", name:"Level 5",        test:function(s){return s.level>=5;}},
+    {id:"breaker", e:"🎲", name:"Break Taker",   test:function(s){return s.breaksDone>=5;}}
+  ];
+  var LVL_TITLES = ["Kindling","Ember","Flame","Blaze","Wildfire","Inferno","Supernova"];
+
+  /* ---------- State ---------- */
+  var defaults = {
+    focus:25, short:5, long:15, rounds:4, goal:8,
+    sound:true, auto:false, notify:false,
+    activities:[],
+    totalFocus:0, totalMinutes:0, breaksDone:0,
+    xp:0, level:1,
+    streak:0, lastDay:"", todayFocus:0, todayKey:"",
+    badges:{}
+  };
+  var state = load();
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(LS);
+      if(!raw) return clone(defaults);
+      var s = JSON.parse(raw);
+      for(var k in defaults){ if(!(k in s)) s[k]=clone(defaults[k]); }
+      return s;
+    }catch(e){ return clone(defaults); }
+  }
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+  function save(){ try{ localStorage.setItem(LS, JSON.stringify(state)); }catch(e){} }
+
+  function todayStr(){ var d=new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
+
+  /* roll over day + streak */
+  function rollDay(){
+    var t = todayStr();
+    if(state.todayKey !== t){
+      // determine streak continuity
+      if(state.lastDay){
+        var y = new Date(); y.setDate(y.getDate()-1);
+        var ys = y.getFullYear()+"-"+(y.getMonth()+1)+"-"+y.getDate();
+        if(state.lastDay !== t && state.lastDay !== ys){ state.streak = 0; }
+      }
+      state.todayKey = t;
+      state.todayFocus = 0;
+      save();
+    }
+  }
+  rollDay();
+
+  /* ---------- Timer engine ---------- */
+  var mode = "focus";              // focus | short | long
+  var running = false;
+  var remaining = state.focus*60;  // seconds
+  var totalDur = remaining;
+  var roundInCycle = 1;            // 1..rounds
+  var ticker = null;
+  var endAt = 0;
+
+  var C = 2*Math.PI*110;           // ring circumference
+  $("ring").setAttribute("stroke-dasharray", C.toFixed(2));
+
+  function modeColor(m){ return m==="focus"?"--focus":m==="short"?"--short":"--long"; }
+  function modeColor2(m){ return m==="focus"?"--focus2":m==="short"?"--short2":"--long2"; }
+
+  function durFor(m){ return (m==="focus"?state.focus:m==="short"?state.short:state.long)*60; }
+
+  function setMode(m, resetTime){
+    mode = m;
+    document.querySelectorAll(".mode").forEach(function(b){
+      b.setAttribute("aria-pressed", b.dataset.mode===m ? "true":"false");
+    });
+    var root = document.documentElement.style;
+    root.setProperty("--accent", getVar(modeColor(m)));
+    root.setProperty("--accent2", getVar(modeColor2(m)));
+    $("phaseLabel").textContent = m==="focus"?"Focus":m==="short"?"Short Break":"Long Break";
+    if(resetTime){ remaining = durFor(m); totalDur = remaining; }
+    paintTime(); paintRing(); paintRound();
+  }
+  function getVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+  function fmt(s){
+    s = Math.max(0, Math.round(s));
+    var m = Math.floor(s/60), r = s%60;
+    return (m<10?"0":"")+m+":"+(r<10?"0":"")+r;
+  }
+  function paintTime(){
+    $("timeText").textContent = fmt(remaining);
+    document.title = (running?fmt(remaining)+" · ":"") + "Focus Forge";
+  }
+  function paintRing(){
+    var frac = totalDur>0 ? (remaining/totalDur) : 0;
+    $("ring").style.strokeDashoffset = (C*(1-frac)).toFixed(2);
+    $("ring").style.stroke = getVar(modeColor(mode));
+  }
+  function paintRound(){
+    $("roundCue").textContent = mode==="focus"
+      ? "Round "+roundInCycle+" of "+state.rounds
+      : (mode==="long"?"Long break — nice work!":"Short break");
+    // Filled dot = a focus round already completed this cycle.
+    var filled = (mode==="focus") ? roundInCycle-1 : roundInCycle;
+    var dots="";
+    for(var j=1;j<=state.rounds;j++){
+      dots += '<span class="dot'+(j<=filled?" on":"")+'"></span>';
+    }
+    $("dots").innerHTML = dots;
+  }
+
+  function start(){
+    if(running) return;
+    running = true;
+    endAt = Date.now() + remaining*1000;
+    $("startBtn").textContent = "⏸ Pause";
+    ticker = setInterval(tick, 200);
+    tick();
+  }
+  function pause(){
+    running=false;
+    clearInterval(ticker);
+    $("startBtn").textContent = "▶ Start";
+    paintTime();
+  }
+  function toggle(){ running?pause():start(); }
+
+  function tick(){
+    remaining = (endAt - Date.now())/1000;
+    if(remaining<=0){ remaining=0; paintTime(); paintRing(); complete(); return; }
+    paintTime(); paintRing();
+  }
+
+  function reset(){
+    pause();
+    remaining = durFor(mode); totalDur=remaining;
+    paintTime(); paintRing();
+  }
+
+  function skip(){
+    pause();
+    complete(true);
+  }
+
+  /* When a phase completes */
+  function complete(skipped){
+    pause();
+    ding();
+
+    if(mode==="focus"){
+      if(!skipped){
+        rollDay();
+        state.totalFocus++;
+        state.todayFocus++;
+        state.totalMinutes += state.focus;
+        addXP(25);
+        // streak: first focus of a new day extends streak
+        if(state.lastDay !== todayStr()){
+          state.streak = (state.streak||0)+1;
+          state.lastDay = todayStr();
+        }
+        var goalHit = state.todayFocus===state.goal;
+        celebrate();
+        toast("🍅 Focus complete! +25 XP" + (goalHit?" · Daily goal reached! 🎯":""));
+        notify("Focus session done!", "Time for a break. Pick a reward 🎲");
+      }
+      // decide next: short or long break
+      var nextIsLong = (roundInCycle % state.rounds === 0);
+      var nextMode = nextIsLong ? "long" : "short";
+      setMode(nextMode, true);
+      openBreak(nextMode);
+    } else {
+      // break finished
+      if(!skipped){ state.breaksDone++; }
+      // advance round after a break
+      if(mode==="long"){ roundInCycle = 1; }
+      else { roundInCycle = Math.min(state.rounds, roundInCycle+1); }
+      hideNowDoing();
+      setMode("focus", true);
+      toast("Back to it 🎯 Round "+roundInCycle);
+      notify("Break over", "Let's focus — round "+roundInCycle);
+      if(state.auto && !skipped) start();
+    }
+    refreshBadges();
+    renderStats();
+    save();
+  }
+
+  /* ---------- XP / Levels ---------- */
+  function xpForLevel(l){ return 100 + (l-1)*50; } // 100,150,200...
+  function addXP(n){
+    state.xp += n;
+    while(state.xp >= xpForLevel(state.level)){
+      state.xp -= xpForLevel(state.level);
+      state.level++;
+      toast("🎉 Level up! You're now level "+state.level+" — "+lvlTitle(state.level));
+      celebrate();
+    }
+  }
+  function lvlTitle(l){ return LVL_TITLES[Math.min(LVL_TITLES.length-1, l-1)]; }
+
+  function renderStats(){
+    $("stToday").innerHTML = state.todayFocus+'<small> 🍅</small>';
+    $("stStreak").innerHTML = state.streak+'<small> 🔥</small>';
+    $("stLevel").textContent = state.level;
+    $("lvlNum").textContent = state.level;
+    $("lvlTitle").textContent = lvlTitle(state.level);
+    var need = xpForLevel(state.level);
+    $("xpMeta").textContent = state.xp+" / "+need+" XP";
+    $("lvlFill").style.width = Math.min(100,(state.xp/need*100))+"%";
+    $("goalText").textContent = state.todayFocus+" / "+state.goal;
+    $("goalFill").style.width = Math.min(100,(state.todayFocus/state.goal*100))+"%";
+  }
+
+  function refreshBadges(){
+    var snap = {
+      totalFocus:state.totalFocus, streak:state.streak, level:state.level,
+      metGoalToday: state.todayFocus>=state.goal, breaksDone:state.breaksDone
+    };
+    BADGES.forEach(function(b){
+      if(!state.badges[b.id] && b.test(snap)){
+        state.badges[b.id]=true;
+        toast("🏆 Badge unlocked: "+b.e+" "+b.name);
+        celebrate();
+      }
+    });
+    renderBadges();
+  }
+  function renderBadges(){
+    var h="";
+    BADGES.forEach(function(b){
+      var got = !!state.badges[b.id];
+      h+='<span class="badge'+(got?" got":"")+'" title="'+b.name+'"><span class="e">'+b.e+'</span>'+b.name+'</span>';
+    });
+    $("badges").innerHTML = h;
+  }
+
+  /* ---------- Activities ---------- */
+  function renderActs(){
+    var list = $("actList"); list.innerHTML="";
+    if(state.activities.length===0){ $("actEmpty").style.display="block"; }
+    else{ $("actEmpty").style.display="none"; }
+    state.activities.forEach(function(a,i){
+      var li=document.createElement("li"); li.className="act";
+      li.innerHTML='<span class="em">'+emojiFor(a.text)+'</span>'+
+        '<span class="txt"></span>'+
+        (a.count?'<span class="cnt">×'+a.count+'</span>':'')+
+        '<button class="x" aria-label="Remove">✕</button>';
+      li.querySelector(".txt").textContent=a.text;
+      li.querySelector(".x").onclick=function(){ state.activities.splice(i,1); save(); renderActs(); refreshSeeds(); };
+      list.appendChild(li);
+    });
+    refreshSeeds();
+  }
+  function addAct(text){
+    text=(text||"").trim();
+    if(!text) return;
+    state.activities.push({text:text, count:0});
+    save(); renderActs();
+  }
+  function refreshSeeds(){
+    var row=$("seedRow"); row.innerHTML="";
+    var have={}; state.activities.forEach(function(a){have[a.text.toLowerCase()]=1;});
+    var shown=0;
+    SEEDS.forEach(function(s){
+      if(have[s.toLowerCase()]) return;
+      if(shown>=6) return;
+      shown++;
+      var b=document.createElement("button");
+      b.textContent="+ "+s;
+      b.onclick=function(){ addAct(s); };
+      row.appendChild(b);
+    });
+  }
+
+  /* ---------- Break overlay ---------- */
+  var overlayMode="short";
+  function pickRandom(arr,n){
+    var copy=arr.slice(), out=[];
+    while(copy.length && out.length<n){ out.push(copy.splice(Math.floor(Math.random()*copy.length),1)[0]); }
+    return out;
+  }
+  function openBreak(m){
+    overlayMode=m;
+    $("ovTitle").textContent = m==="long"?"Long break! 🌴":"Break time! ☕";
+    $("ovSub").textContent = state.activities.length
+      ? "Pick a reward activity — you earned it."
+      : "Add activities to the Break Menu to get suggestions. For now, enjoy the rest!";
+    renderPicks();
+    $("overlay").classList.add("show");
+  }
+  function renderPicks(){
+    var box=$("ovPicks"); box.innerHTML="";
+    var picks = pickRandom(state.activities, 3);
+    if(picks.length===0){
+      box.innerHTML='<div class="empty" style="border:none">🌙 Just breathe and relax for a bit.</div>';
+      return;
+    }
+    picks.forEach(function(a){
+      var idx = state.activities.indexOf(a);
+      var btn=document.createElement("button"); btn.className="pick";
+      btn.innerHTML='<span style="font-size:20px">'+emojiFor(a.text)+'</span><span></span>';
+      btn.querySelector("span:last-child").textContent=a.text;
+      btn.onclick=function(){ chooseActivity(idx); };
+      box.appendChild(btn);
+    });
+  }
+  function chooseActivity(idx){
+    var a=state.activities[idx];
+    if(a){ a.count=(a.count||0)+1; save(); renderActs(); }
+    $("overlay").classList.remove("show");
+    showNowDoing(a?a.text:"");
+    addXP(5);
+    toast("Enjoy your break! +5 XP");
+    renderStats();
+  }
+  function showNowDoing(txt){
+    if(!txt){ hideNowDoing(); return; }
+    $("nowDoingText").textContent = txt;
+    $("nowDoing").classList.add("show");
+  }
+  function hideNowDoing(){ $("nowDoing").classList.remove("show"); }
+
+  /* ---------- Sound / notifications ---------- */
+  var actx=null;
+  function ding(){
+    if(!state.sound) return;
+    try{
+      actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+      if(actx.state==="suspended") actx.resume();
+      var seq=[[880,0],[1108,.12],[1318,.24]];
+      seq.forEach(function(s){
+        var o=actx.createOscillator(), g=actx.createGain();
+        o.type="sine"; o.frequency.value=s[0];
+        var t=actx.currentTime+s[1];
+        g.gain.setValueAtTime(0.0001,t);
+        g.gain.exponentialRampToValueAtTime(0.25,t+0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001,t+0.35);
+        o.connect(g).connect(actx.destination);
+        o.start(t); o.stop(t+0.4);
+      });
+    }catch(e){}
+  }
+  function notify(title, body){
+    if(!state.notify) return;
+    try{
+      if("Notification" in window && Notification.permission==="granted"){
+        new Notification(title,{body:body, silent:true});
+      }
+    }catch(e){}
+  }
+
+  /* ---------- Toast + confetti ---------- */
+  var toastT=null;
+  function toast(msg){
+    var el=$("toast"); el.textContent=msg; el.classList.add("show");
+    clearTimeout(toastT); toastT=setTimeout(function(){ el.classList.remove("show"); },3200);
+  }
+  var cv=$("fx"), cx=cv.getContext("2d"), parts=[], raf=null;
+  function sizeCanvas(){ cv.width=innerWidth; cv.height=innerHeight; }
+  sizeCanvas(); addEventListener("resize",sizeCanvas);
+  function celebrate(){
+    var colors=["#ff6b6b","#4ecdc4","#a78bfa","#ffd166","#51e0a3"];
+    for(var i=0;i<90;i++){
+      parts.push({
+        x:innerWidth/2, y:innerHeight/3,
+        vx:(Math.random()-.5)*11, vy:(Math.random()-1.1)*11,
+        g:0.28+Math.random()*0.1, s:5+Math.random()*6,
+        c:colors[i%colors.length], rot:Math.random()*6.28, vr:(Math.random()-.5)*.35, life:1
+      });
+    }
+    if(!raf) raf=requestAnimationFrame(drawFx);
+  }
+  function drawFx(){
+    cx.clearRect(0,0,cv.width,cv.height);
+    for(var i=parts.length-1;i>=0;i--){
+      var p=parts[i];
+      p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.life-=0.008;
+      if(p.y>cv.height+30 || p.life<=0){ parts.splice(i,1); continue; }
+      cx.save(); cx.translate(p.x,p.y); cx.rotate(p.rot); cx.globalAlpha=Math.max(0,p.life);
+      cx.fillStyle=p.c; cx.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.6); cx.restore();
+    }
+    if(parts.length){ raf=requestAnimationFrame(drawFx); } else { raf=null; cx.clearRect(0,0,cv.width,cv.height); }
+  }
+
+  /* ---------- Settings wiring ---------- */
+  function loadSettingsUI(){
+    $("setFocus").value=state.focus; $("setShort").value=state.short; $("setLong").value=state.long;
+    $("setRounds").value=state.rounds; $("setGoal").value=state.goal;
+    $("setSound").checked=state.sound; $("setAuto").checked=state.auto; $("setNotify").checked=state.notify;
+  }
+  function clampNum(v,min,max,def){ v=parseInt(v,10); if(isNaN(v)) return def; return Math.max(min,Math.min(max,v)); }
+  function applySettings(){
+    state.focus=clampNum($("setFocus").value,1,90,25);
+    state.short=clampNum($("setShort").value,1,60,5);
+    state.long=clampNum($("setLong").value,1,60,15);
+    state.rounds=clampNum($("setRounds").value,2,8,4);
+    state.goal=clampNum($("setGoal").value,1,20,8);
+    state.sound=$("setSound").checked; state.auto=$("setAuto").checked;
+    save();
+    if(!running){ remaining=durFor(mode); totalDur=remaining; paintTime(); paintRing(); paintRound(); }
+    renderStats();
+  }
+
+  /* ---------- Events ---------- */
+  document.querySelectorAll(".mode").forEach(function(b){
+    b.addEventListener("click",function(){
+      if(running && !confirm("Switch mode? This resets the current timer.")) return;
+      pause();
+      if(b.dataset.mode==="focus"){ /* keep round */ }
+      setMode(b.dataset.mode, true);
+    });
+  });
+  $("startBtn").addEventListener("click",toggle);
+  $("resetBtn").addEventListener("click",reset);
+  $("skipBtn").addEventListener("click",skip);
+
+  $("addBtn").addEventListener("click",function(){ addAct($("actInput").value); $("actInput").value=""; $("actInput").focus(); });
+  $("actInput").addEventListener("keydown",function(e){ if(e.key==="Enter"){ addAct(this.value); this.value=""; } });
+
+  $("ovReroll").addEventListener("click",renderPicks);
+  $("ovSkip").addEventListener("click",function(){ $("overlay").classList.remove("show"); hideNowDoing(); });
+
+  ["setFocus","setShort","setLong","setRounds","setGoal"].forEach(function(id){
+    $(id).addEventListener("change",applySettings);
+  });
+  ["setSound","setAuto"].forEach(function(id){ $(id).addEventListener("change",applySettings); });
+  $("setNotify").addEventListener("change",function(){
+    state.notify=this.checked; save();
+    if(this.checked && "Notification" in window && Notification.permission!=="granted"){
+      Notification.requestPermission().then(function(p){
+        if(p!=="granted"){ state.notify=false; $("setNotify").checked=false; save(); toast("Notifications blocked by browser"); }
+      });
+    }
+  });
+  $("resetAll").addEventListener("click",function(){
+    if(confirm("Erase all progress, settings, and activities on this device?")){
+      state=clone(defaults); state.todayKey=todayStr(); save(); location.reload();
+    }
+  });
+
+  // Keyboard: space start/pause, r reset
+  document.addEventListener("keydown",function(e){
+    if(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA") return;
+    if(e.code==="Space"){ e.preventDefault(); toggle(); }
+    else if(e.key==="r"||e.key==="R"){ reset(); }
+    else if(e.key==="s"||e.key==="S"){ skip(); }
+  });
+
+  // Warn before leaving mid-session
+  addEventListener("beforeunload",function(e){ if(running){ e.preventDefault(); e.returnValue=""; } });
+
+  /* ---------- Init ---------- */
+  loadSettingsUI();
+  setMode("focus", true);
+  renderActs();
+  renderBadges();
+  renderStats();
+  paintRound();
+})();
+</script>
+</body>
+</html>
