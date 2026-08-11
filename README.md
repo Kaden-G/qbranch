@@ -11,7 +11,14 @@ this repo only serves the static shell. No server, no accounts, no external requ
 
 ## Files
 - index.html — the entire app (UI, storage, progression engine)
+- pomodoro.html — Focus Forge: a standalone gamified pomodoro timer + daily break planner (open directly)
 - manifest.json + icons — installable app identity
 - sw.js — offline cache
+
+## Focus Forge (pomodoro.html)
+A self-contained pomodoro timer with a daily "break menu" you fill in each morning.
+Finish a focus round, then pick a reward activity for your break. Earn XP, level up,
+build a daily streak, and unlock badges. Same local-first rules: no accounts, no network
+requests, all state in this device's localStorage. Just open the file (or host it on Pages).
 
 Back up regularly: Vault tab → Export backup (JSON).
