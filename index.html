@@ -94,6 +94,18 @@
   .olnote{font-size:11.5px;color:var(--warn);line-height:1.5;margin:8px 2px 0}
   .zone2{font-size:11.5px;color:var(--cyan);line-height:1.5;margin:8px 2px 2px;font-weight:600}
   .tchip.disabled{opacity:.45;text-decoration:line-through;cursor:not-allowed}
+  .todaysched{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:12px 18px 0;padding:10px 13px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+  .todaysched .ts-lbl{font-size:11.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+  .todaysched .ts-sess{font-size:14px;font-weight:800}
+  .todaysched.t-cardio .ts-sess{color:var(--cyan)}
+  .todaysched.t-lift .ts-sess{color:var(--amber)}
+  .todaysched .ts-btn{margin-left:auto;background:var(--accent);color:#fff;border:none;border-radius:9px;padding:7px 12px;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+  .todaysched .ts-on{margin-left:auto;font-size:12px;color:var(--ok);font-weight:800}
+  .schedgrid{margin:0 18px;display:flex;flex-direction:column;gap:6px}
+  .schedrow{display:flex;align-items:center;gap:10px;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font:inherit;cursor:pointer;text-align:left}
+  .schedrow .sd-wk{font-weight:800;width:38px;color:var(--muted)}
+  .schedrow .sd-lbl{font-weight:700}
+  .schedrow .sd-tap{margin-left:auto;font-size:11px;color:var(--muted2)}
 
   .note{margin:12px 18px 0;background:var(--surface);border:1px solid var(--line);border-radius:12px;
     padding:10px 13px;font-size:12.5px;line-height:1.5;color:var(--muted);display:flex;gap:9px;align-items:flex-start}
@@ -276,6 +288,7 @@
 <!-- ============ TRAIN ============ -->
 <div class="page on" id="pg-train">
   <div class="bpanel" id="blockPanel"></div>
+  <div class="todaysched" id="todaySched"></div>
   <div class="daytabs" id="daytabs"></div>
   <button class="expressbtn" id="expressBtn" type="button"></button>
   <div class="presscap" id="pressCap"></div>
@@ -430,6 +443,9 @@
     <button class="vbtn danger" id="vReset">⚠︎ Reset app<small>Erase local data (export first!)</small></button>
   </div>
   <input type="file" id="vFile" accept="application/json" style="display:none">
+  <div class="sect"><h2>Weekly schedule</h2><span class="meta" style="color:var(--muted2);font-size:11px">tap a day to change</span></div>
+  <div id="schedEditor" class="schedgrid"></div>
+  <div class="footnote">Fixed weekday plan. Train opens on today's session; you can still pick any day from the tabs, and a missed day is just skipped — no penalty.</div>
   <div class="sect"><h2>Profile & rules</h2></div>
   <div class="prof">
     <span class="tagline">Casino Royale lean recomp</span> — V-taper: lateral delts · upper chest · lats · arms. Legs proportional.<br><br>
@@ -865,6 +881,51 @@ function renderSoreRecent(){
   el.querySelectorAll(".x").forEach(b=>b.onclick=()=>removeSoreness(b.dataset.id));
 }
 
+/* ---------- weekday schedule (Change 1) — fixed days, not a floating rotation --
+   db.schedule maps weekday → session; the Train tab opens on today's scheduled
+   session. A/B/C day-tabs remain as override + off-schedule fallback rotation.
+   Missed days are never guilt-tripped or auto-rescheduled — just shown. */
+const WEEK_ORDER=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const SCHED_OPTIONS=[
+  {type:"open"},
+  {type:"lift",day:"A"},{type:"lift",day:"B"},{type:"lift",day:"C"},
+  {type:"cardio",label:"Zone 2 · 25 min"},
+  {type:"cardio",label:"Zone 2 · 25 min + core/mobility"},
+];
+function schedLabel(e){
+  if(!e||e.type==="open") return "Optional / rest";
+  if(e.type==="lift")   return "Full Body "+e.day;
+  if(e.type==="cardio") return e.label||"Zone 2 cardio";
+  return "—";
+}
+function weekdayKey(iso){ return DOW[new Date((iso||todayISO())+"T00:00:00").getDay()]; }
+function todaySched(){ return db.schedule[weekdayKey()]||{type:"open"}; }
+function defaultDayForToday(){ const s=todaySched(); return (s.type==="lift"&&s.day)?s.day:"A"; }
+function renderTodaySched(){
+  const el=$("todaySched"); if(!el) return;
+  const wk=weekdayKey(), s=db.schedule[wk]||{type:"open"};
+  let action="";
+  if(s.type==="lift")        action = curDay===s.day ? `<span class="ts-on">on it ✓</span>` : `<button class="ts-btn" id="tsGo">Go to Full Body ${esc(s.day)} →</button>`;
+  else if(s.type==="cardio") action = `<button class="ts-btn" id="tsCardio">Log cardio →</button>`;
+  el.className="todaysched t-"+s.type;
+  el.innerHTML=`<span class="ts-lbl">📅 Today · ${wk}</span><span class="ts-sess">${esc(schedLabel(s))}</span>${action}`;
+  const g=$("tsGo");     if(g) g.onclick=()=>{ curDay=s.day; ensureSession(); renderTrain(); };
+  const c=$("tsCardio"); if(c) c.onclick=()=>{ showOther("cardio"); const f=$("cardioForm"); if(f&&f.scrollIntoView) f.scrollIntoView({behavior:"smooth"}); };
+}
+function renderSchedule(){
+  const el=$("schedEditor"); if(!el) return;
+  el.innerHTML=WEEK_ORDER.map(wk=>{ const e=db.schedule[wk]||{type:"open"};
+    return `<button class="schedrow" data-day="${wk}" type="button"><span class="sd-wk">${wk}</span><span class="sd-lbl">${esc(schedLabel(e))}</span><span class="sd-tap">tap ›</span></button>`;
+  }).join("");
+  el.querySelectorAll(".schedrow").forEach(b=>b.onclick=()=>cycleSchedule(b.dataset.day));
+}
+function cycleSchedule(wk){
+  const cur=db.schedule[wk]||{type:"open"};
+  const idx=SCHED_OPTIONS.findIndex(o=>o.type===cur.type && (o.day||"")===(cur.day||"") && (o.label||"")===(cur.label||""));
+  db.schedule[wk]=JSON.parse(JSON.stringify(SCHED_OPTIONS[(idx+1)%SCHED_OPTIONS.length]));
+  persist(); renderSchedule(); renderTodaySched();
+}
+
 function flashSaved(){ const el=$("saveInd"); if(!el)return;
   el.textContent = memOnly ? "in-memory ⚠" : "saved ✓";
   el.style.color = memOnly ? "var(--warn)" : "var(--ok)";
@@ -927,7 +988,7 @@ function prescribe(def){
 }
 
 /* ---------- session state (one in-progress session per day) ---------- */
-let curDay = ["A","B","C"].find(d=>db.sessions[d]) || "A";
+let curDay = ["A","B","C"].find(d=>db.sessions[d]) || defaultDayForToday();
 function curSession(){ return db.sessions[curDay]; }
 function freshSession(day){
   return {date:todayISO(), day, data:PROGRAM[day].ex.map(d=>({
@@ -1181,7 +1242,7 @@ function renderTrain(){
     });
   });
   $("setmeta").textContent = defs.reduce((a,d)=>a+d.sets,0)+" sets";
-  renderPressCap(); updatePressGate();
+  renderTodaySched(); renderPressCap(); updatePressGate();
   persist();
 }
 
@@ -1538,7 +1599,7 @@ $("vFile").addEventListener("change",e=>{
       if(!confirm(`Restore backup from ${d.exported||"unknown date"}? This replaces current data (${db.history.length} sessions).`)) return;
       db=migrate({app:APP,schema:SCHEMA,created:d.created||todayISO(),program:d.program||db.program,
           history:d.history,telemetry:d.telemetry,sessions:d.sessions,session:d.session});
-      persist(); curDay=["A","B","C"].find(x=>db.sessions[x])||"A"; rebuildProgram();
+      persist(); curDay=["A","B","C"].find(x=>db.sessions[x])||defaultDayForToday(); rebuildProgram();
       renderTrain(); renderTrends(); showToast("Backup restored ✓");
     }catch(err){ showToast("That file isn't a valid Q Branch backup"); }
     e.target.value="";
@@ -1609,7 +1670,7 @@ document.addEventListener("keydown",e=>{
 });
 
 /* ---------- boot ---------- */
-renderTrain(); renderTele(); renderTrends(); renderVaultStat(); renderSoreRecent();
+renderTrain(); renderTele(); renderTrends(); renderVaultStat(); renderSoreRecent(); renderSchedule();
 // make the telemetry tap-chips keyboard-operable (clicks bubble to their group handler)
 document.querySelectorAll("#pg-log .tchip, #pg-train .tchip").forEach(c=>{ c.setAttribute("role","button"); c.tabIndex=0; });
 /* offline shell: cache-first service worker (no-ops on file:// or unsupported) */
