@@ -107,6 +107,16 @@
   .schedrow .sd-lbl{font-weight:700}
   .schedrow .sd-tap{margin-left:auto;font-size:11px;color:var(--muted2)}
   .chip.recal{background:rgba(95,179,196,.16);color:var(--cyan);font-weight:800;letter-spacing:.3px}
+  .hcards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 18px}
+  .hcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .hc-lbl{font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+  .hc-val{font-family:var(--mono);font-size:23px;font-weight:800;margin-top:3px}
+  .hc-val .hc-u{font-size:12px;color:var(--muted);margin-left:4px;font-weight:600}
+  .hc-bar{height:6px;border-radius:4px;background:var(--line);margin:8px 0 6px;overflow:hidden}
+  .hc-bar span{display:block;height:100%;border-radius:4px}
+  .hc-bar span.good{background:var(--ok)} .hc-bar span.warn{background:var(--warn)}
+  .hc-sub{font-size:11px;color:var(--muted);line-height:1.4}
+  .hc-sub .good{color:var(--ok);font-weight:700} .hc-sub .warn{color:var(--warn);font-weight:700}
 
   .note{margin:12px 18px 0;background:var(--surface);border:1px solid var(--line);border-radius:12px;
     padding:10px 13px;font-size:12.5px;line-height:1.5;color:var(--muted);display:flex;gap:9px;align-items:flex-start}
@@ -420,11 +430,13 @@
 
 <!-- ============ TRENDS ============ -->
 <div class="page" id="pg-trends">
-  <div class="sect"><h2>Personal records</h2><span class="meta" style="color:var(--amber);font-family:var(--mono);font-size:11px">EPLEY e1RM</span></div>
-  <div class="tblcard"><table id="prTable"></table></div>
-  <div class="footnote" style="margin-top:8px">Epley inflates above ~10–12 reps — trust it most on sets under 10.</div>
+  <div class="sect"><h2>Health</h2><span class="meta" style="color:var(--ok);font-family:var(--mono);font-size:11px">GOALS FIRST</span></div>
+  <div id="healthCards"></div>
   <div class="sect"><h2>Shoulder-flag correlation</h2><span class="meta" style="color:var(--muted2);font-family:var(--mono);font-size:11px">72 H WINDOW</span></div>
   <div id="soreCorr"></div>
+  <div class="sect"><h2>Personal records</h2><span class="meta" style="color:var(--amber);font-family:var(--mono);font-size:11px">EPLEY e1RM</span></div>
+  <div class="tblcard"><table id="prTable"></table></div>
+  <div class="footnote" style="margin-top:8px">Strength still matters — just no longer top billing. Epley inflates above ~10–12 reps; trust it most on sets under 10.</div>
   <div class="sect"><h2>Sessions</h2><span class="meta" id="sessCount"></span></div>
   <div id="histList"></div>
   <div class="sect"><h2>Telemetry log</h2><span class="meta" id="teleCount"></span></div>
@@ -1504,6 +1516,35 @@ $("classSave").onclick=()=>{
 };
 
 /* ---------- trends ---------- */
+/* Change 6 — health metrics lead the tab. All deterministic from local data. */
+function rhrSeries(){ return db.telemetry.filter(e=>e.raw && e.raw.rhr!=="" && e.raw.rhr!=null)
+  .map(e=>({date:e.date, v:parseFloat(e.raw.rhr)})).filter(x=>!isNaN(x.v)); }
+function rhrLatest(){ const s=rhrSeries(); if(!s.length) return null;
+  const latest=s[s.length-1].v, prior=s.slice(-4,-1);
+  const avgPrior=prior.length?prior.reduce((a,b)=>a+b.v,0)/prior.length:null;
+  return {latest, delta: avgPrior!=null ? Math.round((latest-avgPrior)*10)/10 : null, n:s.length}; }
+function weeklyZone2(){ return cardioMinutesSince(daysAgoISO(6)); }
+function scheduledCountLast7(){ let c=0; for(let i=0;i<7;i++){ const e=db.schedule[weekdayKey(daysAgoISO(i))]; if(e && e.type!=="open") c++; } return c; }
+function completedCountLast7(){ const since=daysAgoISO(6); return db.history.filter(h=>h.date>=since).length; }
+function renderHealth(){
+  const el=$("healthCards"); if(!el) return;
+  const S=getSettings();
+  const rh=rhrLatest();
+  const rhrCard = rh
+    ? `<div class="hcard"><div class="hc-lbl">Resting HR</div><div class="hc-val">${rh.latest}<span class="hc-u">bpm</span></div>
+        <div class="hc-sub">${rh.delta==null?`${rh.n} logged`:(rh.delta<0?`<span class="good">▼ ${Math.abs(rh.delta)}</span> vs recent`:rh.delta>0?`<span class="warn">▲ ${rh.delta}</span> vs recent`:`flat vs recent`)}</div></div>`
+    : `<div class="hcard"><div class="hc-lbl">Resting HR</div><div class="hc-val">—</div><div class="hc-sub">log RHR in the Log tab</div></div>`;
+  const z=weeklyZone2(), zpct=S.zone2Hi?Math.min(100,Math.round(z/S.zone2Hi*100)):0, zcls=z>=S.zone2Lo?"good":"warn";
+  const zCard=`<div class="hcard"><div class="hc-lbl">Zone 2 this week</div><div class="hc-val">${z}<span class="hc-u">min</span></div>
+     <div class="hc-bar"><span class="${zcls}" style="width:${zpct}%"></span></div><div class="hc-sub">target ${S.zone2Lo}–${S.zone2Hi} min</div></div>`;
+  const p=pressCapState(), ppct=p.cap?Math.min(100,Math.round(p.n/p.cap*100)):0;
+  const pCard=`<div class="hcard"><div class="hc-lbl">Pressing sets</div><div class="hc-val">${p.n}<span class="hc-u">/ ${p.cap}</span></div>
+     <div class="hc-bar"><span class="${p.over?"warn":"good"}" style="width:${ppct}%"></span></div><div class="hc-sub">weekly shoulder cap</div></div>`;
+  const sched=scheduledCountLast7(), done=completedCountLast7(), apct=sched?Math.min(100,Math.round(done/sched*100)):0;
+  const aCard=`<div class="hcard"><div class="hc-lbl">Adherence · 7d</div><div class="hc-val">${done}<span class="hc-u">/ ${sched||0}</span></div>
+     ${sched?`<div class="hc-bar"><span class="good" style="width:${apct}%"></span></div>`:""}<div class="hc-sub">${sched?"sessions done vs scheduled":"nothing scheduled"}</div></div>`;
+  el.innerHTML=`<div class="hcards">${rhrCard}${zCard}${pCard}${aCard}</div>`;
+}
 function epley(w,r){return r>0?Math.round(w*(1+r/30)*10)/10:0;}
 function computePRs(){
   const best={};
@@ -1520,6 +1561,7 @@ function sessionTonnage(h){
     const w=parseFloat(s.wt),r=parseInt(s.rep,10); if(w&&r)t+=w*r;})); return t;
 }
 function renderTrends(){
+  renderHealth();
   const prs=computePRs();
   const names=Object.keys(prs);
   $("prTable").innerHTML="<tr><th>Lift</th><th>e1RM</th><th>Best set</th><th>Date</th></tr>"+
