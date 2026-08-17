@@ -360,7 +360,7 @@
    Durable core: storage, progression engine, math. No model in the loop.
    AI layer: you copy shorthand out to Claude; Claude never holds the data. */
 
-const APP = "qbranch", SCHEMA = 3, DB_KEY = "qbranch:v1";
+const APP = "qbranch", SCHEMA = 4, DB_KEY = "qbranch:v1";
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const todayISO = () => new Date().toLocaleDateString("en-CA");
@@ -532,12 +532,43 @@ const TIME_NAMES=new Set();
 function isTimeName(n){ return TIME_NAMES.has(String(n||"").toLowerCase()); }
 
 /* ---------- storage: single versioned store, autosave, safe fallback ---------- */
+/* Editable-by-data defaults (never magic numbers in the render path). All of
+   these live on db.settings / db.schedule so they can be edited and survive in
+   backups; render/logic reads them through getSettings()/db.schedule. */
+const DEFAULT_SETTINGS = {
+  pressingCapPerWeek: 6,      // Change 3 — hard weekly pressing-set ceiling
+  staleDays: 21,              // Change 7 — prefill goes RECALIBRATE past this age
+  sorenessWindowHours: 72,    // Change 4 — retroactive attribution window
+  zone2Lo: 50, zone2Hi: 75,   // Change 6 — weekly Zone-2 minutes target band
+};
+/* Weekday → session. type:"lift" carries a day A/B/C; "cardio" a label;
+   "open" is unscheduled. Stored as data so the user can override any day. */
+const DEFAULT_SCHEDULE = {
+  Mon:{type:"lift",   day:"A"},
+  Tue:{type:"cardio", label:"Zone 2 · 25 min"},
+  Wed:{type:"lift",   day:"B"},
+  Thu:{type:"cardio", label:"Zone 2 · 25 min + core/mobility"},
+  Fri:{type:"lift",   day:"C"},
+  Sat:{type:"open"},
+  Sun:{type:"open"},
+};
+const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+/* Stable-ish unique id for sessions/flags so Change 4 can link them both ways.
+   Browser context — Date.now()/Math.random() are fine here (this is not a
+   workflow script); collisions are astronomically unlikely for a single user. */
+let _uidn = 0;
+function uid(p){ return (p||"id")+"-"+Date.now().toString(36)+"-"+(_uidn++).toString(36)+Math.floor(Math.random()*1e6).toString(36); }
+function getSettings(){ return Object.assign({}, DEFAULT_SETTINGS, (db&&db.settings)||{}); }
 function seed(){
   return {
     app:APP, schema:SCHEMA, created:todayISO(),
     program:{i:0, done:0},
+    settings:{...DEFAULT_SETTINGS},
+    schedule:JSON.parse(JSON.stringify(DEFAULT_SCHEDULE)),
+    sorenessFlags:[],
+    pressingOverrides:[],
     history:[{
-      date:"2026-07-05", day:"A", block:0, exercises:[
+      id:"seed-2026-07-05-A", type:"lift", date:"2026-07-05", day:"A", block:0, flags:[], exercises:[
         {name:"Goblet Squat", sets:[{rep:"10",wt:"35",rpe:""},{rep:"10",wt:"35",rpe:"7-8"},{rep:"10",wt:"35",rpe:"7-8"}], note:"quad cramp after S1 — pushed through"},
         {name:"DB Incline Press", sets:[{rep:"11",wt:"25",rpe:""},{rep:"11",wt:"25",rpe:""},{rep:"11",wt:"25",rpe:""}]},
         {name:"Chest-Supported Row", sets:[{rep:"11",wt:"45",rpe:""},{rep:"11",wt:"45",rpe:""},{rep:"11",wt:"45",rpe:""}]},
@@ -567,6 +598,18 @@ const MIGRATIONS = {
     (d.history||[]).forEach(h=>{ if(h.block==null) h.block=0; });
     return d;
   },
+  4: d => { // health-first rework: session ids/types, schedule, cap settings, soreness log
+    d.settings   = Object.assign({}, DEFAULT_SETTINGS, d.settings||{});
+    d.schedule   = d.schedule || JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+    d.sorenessFlags   = Array.isArray(d.sorenessFlags)   ? d.sorenessFlags   : [];
+    d.pressingOverrides = Array.isArray(d.pressingOverrides) ? d.pressingOverrides : [];
+    (d.history||[]).forEach((h,i)=>{
+      if(!h.id)   h.id   = "s"+i+"-"+(h.date||"?")+"-"+(h.day||"x"); // stable for existing rows
+      if(!h.type) h.type = "lift";                                    // all prior sessions were lifts
+      if(!Array.isArray(h.flags)) h.flags = [];                       // attributed soreness-flag ids
+    });
+    return d;
+  },
 };
 function migrate(d){
   if(!d) return d;
@@ -580,6 +623,13 @@ function migrate(d){
   if(!d.program || typeof d.program.i!=="number") d.program={i:0, done:0};
   d.program.i=Math.max(0, Math.min(BLOCKS.length-1, d.program.i|0));
   d.program.done=Math.max(0, d.program.done|0);
+  // invariants for the v4 additions (defensive regardless of migration path)
+  d.settings = Object.assign({}, DEFAULT_SETTINGS, d.settings||{});
+  if(!d.schedule || typeof d.schedule!=="object") d.schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+  if(!Array.isArray(d.sorenessFlags)) d.sorenessFlags=[];
+  if(!Array.isArray(d.pressingOverrides)) d.pressingOverrides=[];
+  (d.history||[]).forEach((h,i)=>{ if(!h.id) h.id="s"+i+"-"+(h.date||"?")+"-"+(h.day||"x");
+    if(!h.type) h.type="lift"; if(!Array.isArray(h.flags)) h.flags=[]; });
   return d;
 }
 let db, memOnly=false, saveT;
@@ -968,7 +1018,7 @@ $("finishBtn").onclick=()=>{
   const sess=curSession();
   const touched=sess.data.some(x=>x.done||x.sets.some(s=>s.rep!==""));
   if(!touched){ showToast("Nothing logged yet — enter at least one set"); return; }
-  const entry={date:sess.date, day:sess.day, block:db.program.i,
+  const entry={id:uid("s"), type:"lift", flags:[], date:sess.date, day:sess.day, block:db.program.i,
     exercises:sess.data.filter(x=>x.done||x.sets.some(s=>s.rep!=="")).map(x=>({
       name:x.name, sets:x.sets.map(s=>({rep:s.rep,wt:s.wt,rpe:s.rpe||""}))}))};
   db.history.push(entry);
