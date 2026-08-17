@@ -60,6 +60,23 @@
   .expressbtn{display:block;width:calc(100% - 36px);margin:10px 18px 0;background:var(--surface);color:var(--amber);
     border:1px solid var(--line);border-radius:12px;padding:11px;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;transition:.15s}
   .expressbtn.on{border-color:var(--amber);background:rgba(232,177,90,.08)}
+  .presscap{margin:10px 18px 0;border:1px solid var(--line);border-radius:12px;padding:11px 13px;background:var(--surface)}
+  .presscap .pc-top{display:flex;justify-content:space-between;align-items:baseline}
+  .presscap .pc-lbl{font-size:12.5px;color:var(--muted);font-weight:700}
+  .presscap .pc-num{font-family:var(--mono);font-size:15px;font-weight:800}
+  .presscap .pc-bar{height:6px;border-radius:4px;background:var(--line);margin:8px 0 7px;overflow:hidden}
+  .presscap .pc-bar span{display:block;height:100%;border-radius:4px;transition:width .2s}
+  .presscap .pc-msg{font-size:11.5px;line-height:1.5;color:var(--muted)}
+  .presscap.cap-ok  .pc-bar span{background:var(--ok)}
+  .presscap.cap-near{border-color:var(--warn)} .presscap.cap-near .pc-bar span{background:var(--warn)} .presscap.cap-near .pc-num{color:var(--warn)}
+  .presscap.cap-hit{border-color:var(--accent-bright,#c0392b);background:rgba(200,50,60,.10)} .presscap.cap-hit .pc-bar span{background:#d9534f} .presscap.cap-hit .pc-num{color:#e8776f}
+  .presscap.cap-ovr{border-color:var(--amber);background:rgba(232,177,90,.08)} .presscap.cap-ovr .pc-bar span{background:var(--amber)} .presscap.cap-ovr .pc-num{color:var(--amber)}
+  .presscap .pc-btn{margin-top:9px;width:100%;background:#d9534f;color:#fff;border:none;border-radius:9px;padding:9px;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer}
+  .presscap .pc-raise{margin-top:9px;width:100%;background:transparent;color:var(--amber);border:1px solid var(--amber);border-radius:9px;padding:8px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+  .card.locked{opacity:.72}
+  .card.locked .sets{filter:grayscale(.3)}
+  .presshint{display:none;margin-top:8px;font-size:11.5px;font-weight:700;color:#e8776f;background:rgba(200,50,60,.10);border-radius:8px;padding:7px 9px}
+  .card.locked .presshint{display:block}
 
   .note{margin:12px 18px 0;background:var(--surface);border:1px solid var(--line);border-radius:12px;
     padding:10px 13px;font-size:12.5px;line-height:1.5;color:var(--muted);display:flex;gap:9px;align-items:flex-start}
@@ -244,6 +261,7 @@
   <div class="bpanel" id="blockPanel"></div>
   <div class="daytabs" id="daytabs"></div>
   <button class="expressbtn" id="expressBtn" type="button"></button>
+  <div class="presscap" id="pressCap"></div>
   <div class="note" id="resumeNote" style="display:none">↩︎ <span><b>Resumed your in-progress session.</b> Everything you'd entered is intact.</span></div>
   <div class="note">🛟 <span><b>Auto-saves on every tap.</b> Lock your phone, switch apps, close the tab — your session survives on this device. Finish with “Complete session” to bank it into History.</span></div>
   <div class="sect"><h2>Warm-up</h2><span class="meta">~4m</span></div>
@@ -376,11 +394,11 @@ const BASE = {
     ex:[
       {name:"Goblet Squat",tag:"Quads · Legs",muscle:"Legs",sets:3,lo:8,hi:10,rpe:"6–7",rpeMax:7,rest:90,mode:"wt",inc:5,
        cues:"<b>Heel-elevate</b> if the ankle limits depth. Tall chest, controlled descent — own the bottom.",sub:"Leg press"},
-      {name:"DB Incline Press",tag:"Upper Chest",muscle:"Chest",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
+      {name:"DB Incline Press",pressing:true,tag:"Upper Chest",muscle:"Chest",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
        cues:"Elbows ~45°, <b>not flared</b> — shoulder-friendly. Full but pain-free range.",sub:"Machine chest press"},
       {name:"Chest-Supported Row",tag:"Back · Lats",muscle:"Back",sets:3,lo:10,hi:12,rpe:"7",rpeMax:7,rest:75,mode:"wt",inc:5,
        cues:"Chest on the bench <b>spares your low back</b>. Drive elbows back, squeeze the blades.",sub:"Seated cable row"},
-      {name:"DB Lateral Raise",tag:"Side Delts",muscle:"Side Delts",sets:3,lo:12,hi:15,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
+      {name:"DB Lateral Raise",pressing:true,tag:"Side Delts",muscle:"Side Delts",sets:3,lo:12,hi:15,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
        cues:"Light — <b>no swing</b>. Lead with the elbows. This is your taper-builder.",sub:"Cable lateral raise"},
       {name:"Face Pull",tag:"Rear Delts · Shoulder health",muscle:"Rear Delts",sets:2,lo:15,hi:15,rpe:"6",rpeMax:6,rest:45,mode:"wt",inc:5,ss:"A",
        cues:"Pull to your eyes, rotate knuckles back. <b>Shoulder insurance.</b>",sub:"Band pull-apart"},
@@ -406,13 +424,13 @@ const BASE = {
   C:{focus:"Push / Delts emphasis",
     warm:[["Row or stair master, easy","3 min"],["Shoulder circles + arm swings","×10 each"],["Wall slides","×10"]],
     ex:[
-      {name:"Landmine Press",tag:"Shoulders · Shoulder-safe",muscle:"Shoulders",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
+      {name:"Landmine Press",pressing:true,tag:"Shoulders · Shoulder-safe",muscle:"Shoulders",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
        cues:"The <b>angled path is the point</b> — press up-and-in, half-kneeling if the back wants support.",sub:"Neutral-grip DB shoulder press"},
-      {name:"Flat DB Press",tag:"Chest",muscle:"Chest",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
+      {name:"Flat DB Press",pressing:true,tag:"Chest",muscle:"Chest",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
        cues:"Elbows ~45°, feet planted. <b>Pain-free range beats full range.</b>",sub:"Machine chest press"},
-      {name:"Arnold Press",tag:"Shoulders · Delts",muscle:"Shoulders",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
+      {name:"Arnold Press",pressing:true,tag:"Shoulders · Delts",muscle:"Shoulders",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
        cues:"Start palms-in at the chin, <b>rotate to palms-out</b> as you press up. Keep the turn smooth and the range <b>pain-free</b> — ease off the bottom rotation if the shoulder barks.",sub:"Neutral-grip DB shoulder press"},
-      {name:"Cable Lateral Raise",tag:"Side Delts",muscle:"Side Delts",sets:3,lo:12,hi:15,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
+      {name:"Cable Lateral Raise",pressing:true,tag:"Side Delts",muscle:"Side Delts",sets:3,lo:12,hi:15,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
        cues:"Constant tension the DBs can't give. <b>Lead with the elbow</b>, no shrug.",sub:"DB lateral raise"},
       {name:"Rope Pushdown",tag:"Arms · Triceps",muscle:"Arms",sets:2,lo:10,hi:12,rpe:"8",rpeMax:8,rest:60,mode:"wt",inc:5,
        cues:"Elbows pinned; <b>spread the rope</b> at the bottom.",sub:"DB overhead extension"},
@@ -435,7 +453,7 @@ const EXPRESS = {
   ex:[
     {name:"KB Goblet Squat",tag:"Legs · KB",muscle:"Legs",sets:3,lo:10,hi:15,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
      cues:"Hold the 35 at your chest, tall spine. <b>Heel-elevate</b> if the ankle limits depth.",sub:"Bodyweight squat"},
-    {name:"Push-up",tag:"Push · Bodyweight",muscle:"Chest",sets:3,lo:8,hi:15,rpe:"8",rpeMax:8,rest:60,mode:"wt",inc:0,
+    {name:"Push-up",pressing:true,tag:"Push · Bodyweight",muscle:"Chest",sets:3,lo:8,hi:15,rpe:"8",rpeMax:8,rest:60,mode:"wt",inc:0,
      cues:"Ribs down, body in one line. <b>Hands to a couch or counter</b> to scale — keep the reps honest.",sub:"Incline push-up"},
     {name:"KB Single-Arm Row",tag:"Pull · KB",muscle:"Back",sets:3,lo:10,hi:12,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
      cues:"<b>Free hand braced on your thigh</b> — takes the low back out of it. 10–12/side. Drive the elbow back, squeeze.",sub:"Table row"},
@@ -530,6 +548,17 @@ function blockReviewText(r){
 const TIME_NAMES=new Set();
 ["A","B","C"].forEach(day=>BASE[day].ex.forEach(d=>{ if(d.mode==="time"){ TIME_NAMES.add(d.name.toLowerCase()); const a=altName(d); if(a) TIME_NAMES.add(a.toLowerCase()); }}));
 function isTimeName(n){ return TIME_NAMES.has(String(n||"").toLowerCase()); }
+
+/* pressing-set attribution (Change 3): names of every pressing-tagged movement
+   — presses + lateral raises — plus each one's swap alternate, since a swapped
+   set logs the alternate's name and must still count against the shoulder cap. */
+const PRESSING_NAMES=new Set();
+(function(){
+  const add=d=>{ if(d && d.pressing){ PRESSING_NAMES.add(d.name.toLowerCase()); const a=altName(d); if(a) PRESSING_NAMES.add(a.toLowerCase()); } };
+  ["A","B","C"].forEach(day=>BASE[day].ex.forEach(add));
+  EXPRESS.ex.forEach(add);
+})();
+function isPressingName(n){ return PRESSING_NAMES.has(String(n||"").toLowerCase()); }
 
 /* ---------- storage: single versioned store, autosave, safe fallback ---------- */
 /* Editable-by-data defaults (never magic numbers in the render path). All of
@@ -662,6 +691,37 @@ persist(); // bake seed/migration into storage on boot
 /* active program for the current block — rebuilt whenever the block changes */
 let PROGRAM = blockProgram(db.program.i);
 function rebuildProgram(){ PROGRAM = blockProgram(db.program.i); }
+
+/* ---------- pressing volume cap (Change 3) — the shoulder guardrail ----------
+   The shoulder is a managed ceiling and its payback is DELAYED, so "stop when it
+   hurts" is not enough; the cap is a pre-committed weekly budget. Rolling 7-day
+   window (not calendar). Counts banked sets + live in-progress sets + any
+   class/external pressing estimate. Cap + window live in db.settings (editable).*/
+function daysAgoISO(n){ const d=new Date(todayISO()+"T00:00:00"); d.setDate(d.getDate()-n); return d.toLocaleDateString("en-CA"); }
+function pressingSetsBanked(sinceISO){
+  let n=0;
+  db.history.forEach(h=>{
+    if(h.date < sinceISO) return;
+    (h.exercises||[]).forEach(e=>{ if(isPressingName(e.name)) n += e.sets.filter(s=>s.rep!=="").length; });
+    if(typeof h.pressingEst==="number") n += h.pressingEst; // class/external estimate (Change 5)
+  });
+  return n;
+}
+function pressingSetsLive(){
+  let n=0;
+  ["A","B","C"].forEach(day=>{ const s=db.sessions[day]; if(!s||!s.data) return;
+    s.data.forEach(x=>{ if(isPressingName(x.name)) n += x.sets.filter(v=>v.rep!=="").length; }); });
+  return n;
+}
+function pressingSetsWeek(){ return pressingSetsBanked(daysAgoISO(6)) + pressingSetsLive(); } // last 7 days inclusive
+function pressCapState(){ const cap=getSettings().pressingCapPerWeek|0, n=pressingSetsWeek(); return {cap, n, over:n>=cap}; }
+/* eligible to SUGGEST (never auto) a manual cap bump: actually pressing regularly
+   and zero shoulder soreness flags in the trailing 14 days = two clean weeks. */
+function twoCleanShoulderWeeks(){
+  const since=daysAgoISO(13), cap=getSettings().pressingCapPerWeek|0;
+  const flagged=(db.sorenessFlags||[]).some(f=>f.joint==="shoulder" && f.date>=since);
+  return !flagged && pressingSetsBanked(since) >= cap;
+}
 
 function flashSaved(){ const el=$("saveInd"); if(!el)return;
   el.textContent = memOnly ? "in-memory ⚠" : "saved ✓";
@@ -836,6 +896,48 @@ function renderBlock(){
   const cp=$("bCopyReview"); if(cp&&rv) cp.onclick=()=>copyText(rv.text,"Block review copied for Claude 📋");
   const dm=$("bDismiss"); if(dm) dm.onclick=()=>{ db.lastReview=null; persist(); renderBlock(); };
 }
+/* Persistent pressing-cap banner + its override / suggest-raise controls. */
+function renderPressCap(){
+  const el=$("pressCap"); if(!el) return;
+  const {cap,n,over}=pressCapState();
+  const sess=curSession();
+  const overridden=!!(sess && sess.pressOverride);
+  const pct=cap>0?Math.min(100, Math.round(n/cap*100)):0;
+  const cls = over ? (overridden?"cap-ovr":"cap-hit") : (n>=cap-1?"cap-near":"cap-ok");
+  const msg = over
+    ? (overridden
+        ? "Override active — pressing unlocked for this session. This is delayed-risk volume; back off at the first hint of shoulder chatter."
+        : "At the weekly pressing cap. Further pressing sets are blocked — shoulder payback lands 24–72 h later, so the cap is the guardrail, not pain.")
+    : "Delayed-onset shoulder risk: pressing volume is pre-committed for the week, not judged in the moment.";
+  el.className="presscap "+cls;
+  el.innerHTML=`<div class="pc-top"><span class="pc-lbl">Pressing sets this week</span><span class="pc-num">${n} / ${cap}</span></div>
+    <div class="pc-bar"><span style="width:${pct}%"></span></div>
+    <div class="pc-msg">${msg}</div>
+    ${ over && !overridden ? '<button class="pc-btn" id="pcOverride" type="button">Override &amp; log this session</button>' : '' }
+    ${ twoCleanShoulderWeeks() && !over ? `<button class="pc-raise" id="pcRaise" type="button">2 clean weeks — raise cap to ${cap+1}? (your call)</button>` : '' }`;
+  const ob=$("pcOverride");
+  if(ob) ob.onclick=()=>{ const s=pressCapState();
+    db.pressingOverrides.push({ts:new Date().toISOString(), date:todayISO(), count:s.n, cap:s.cap});
+    if(sess) sess.pressOverride=true; persist(); renderTrain();
+    showToast("Override logged — pressing unlocked for this session"); };
+  const rb=$("pcRaise");
+  if(rb) rb.onclick=()=>{ db.settings.pressingCapPerWeek=cap+1; persist(); renderTrain();
+    showToast(`Pressing cap raised to ${cap+1} — manual change, your call`); };
+}
+/* Live gate: at/over cap (and not overridden), disable the still-empty inputs on
+   pressing cards so no extra pressing set can be logged; filled inputs stay
+   editable for typo fixes. Non-pressing work is never blocked. */
+function updatePressGate(){
+  renderPressCap();
+  const {over}=pressCapState();
+  const sess=curSession();
+  const lock = over && !(sess && sess.pressOverride);
+  document.querySelectorAll('#exlist .card').forEach(card=>{
+    if(card.dataset.press!=="1") return;
+    card.classList.toggle("locked", lock);
+    card.querySelectorAll('input[data-i]').forEach(inp=>{ inp.disabled = lock && inp.value.trim()===""; });
+  });
+}
 function renderTrain(){
   renderBlock();
   ensureSession(); renderDayTabs(); renderWarm();
@@ -853,8 +955,10 @@ function renderTrain(){
     const alt=altName(def), swapped=!!alt && st.name!==def.name;
     const eff=swapped ? {...def, name:st.name} : def;
     const rx=prescribe(eff);
+    const pressing=!!def.pressing || isPressingName(st.name);
     const card=document.createElement("div");
     card.className="card"+(st.open?" open":"")+(st.done?" done":"")+(def.ss?" ss":"");
+    card.dataset.press = pressing?"1":"";
     const setword = def.mode==="time" ? (def.name==="Plank"?`${def.sets} × ${def.lo}–${def.hi}s`:`${def.sets} × ${def.lo}/side`) : `${def.sets} × ${def.lo}–${def.hi}`;
     let rows="";
     for(let s=0;s<def.sets;s++){
@@ -895,6 +999,7 @@ function renderTrain(){
         ${alt?`<button class="subline swapbtn" type="button">${swapped
               ? `↩︎ Swap back to <b>${esc(def.name)}</b>`
               : `⇄ Swap to <b>${esc(alt)}</b>`}</button>`:""}
+        ${pressing?`<div class="presshint">🔒 Weekly pressing cap reached — override in the banner above to log more.</div>`:""}
         <button class="donebtn">${st.done?"✓ Done":"Mark done"}</button>
       </div>`;
     list.appendChild(card);
@@ -920,6 +1025,7 @@ function renderTrain(){
           if(wtInp){ st.sets[s].wt=wtInp.value.trim(); wtInp.classList.toggle("filled",wtInp.value.trim()!==""); }
         }
         persistSoon(); // debounced: typing is the hot path
+        if(pressing) updatePressGate(); // live cap enforcement as pressing sets are logged
       });
     });
     const restBtn=card.querySelector(".mini.btn");
@@ -933,6 +1039,7 @@ function renderTrain(){
     });
   });
   $("setmeta").textContent = defs.reduce((a,d)=>a+d.sets,0)+" sets";
+  renderPressCap(); updatePressGate();
   persist();
 }
 
