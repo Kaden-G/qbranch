@@ -60,6 +60,63 @@
   .expressbtn{display:block;width:calc(100% - 36px);margin:10px 18px 0;background:var(--surface);color:var(--amber);
     border:1px solid var(--line);border-radius:12px;padding:11px;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;transition:.15s}
   .expressbtn.on{border-color:var(--amber);background:rgba(232,177,90,.08)}
+  .presscap{margin:10px 18px 0;border:1px solid var(--line);border-radius:12px;padding:11px 13px;background:var(--surface)}
+  .presscap .pc-top{display:flex;justify-content:space-between;align-items:baseline}
+  .presscap .pc-lbl{font-size:12.5px;color:var(--muted);font-weight:700}
+  .presscap .pc-num{font-family:var(--mono);font-size:15px;font-weight:800}
+  .presscap .pc-bar{height:6px;border-radius:4px;background:var(--line);margin:8px 0 7px;overflow:hidden}
+  .presscap .pc-bar span{display:block;height:100%;border-radius:4px;transition:width .2s}
+  .presscap .pc-msg{font-size:11.5px;line-height:1.5;color:var(--muted)}
+  .presscap.cap-ok  .pc-bar span{background:var(--ok)}
+  .presscap.cap-near{border-color:var(--warn)} .presscap.cap-near .pc-bar span{background:var(--warn)} .presscap.cap-near .pc-num{color:var(--warn)}
+  .presscap.cap-hit{border-color:var(--accent-bright,#c0392b);background:rgba(200,50,60,.10)} .presscap.cap-hit .pc-bar span{background:#d9534f} .presscap.cap-hit .pc-num{color:#e8776f}
+  .presscap.cap-ovr{border-color:var(--amber);background:rgba(232,177,90,.08)} .presscap.cap-ovr .pc-bar span{background:var(--amber)} .presscap.cap-ovr .pc-num{color:var(--amber)}
+  .presscap .pc-btn{margin-top:9px;width:100%;background:#d9534f;color:#fff;border:none;border-radius:9px;padding:9px;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer}
+  .presscap .pc-raise{margin-top:9px;width:100%;background:transparent;color:var(--amber);border:1px solid var(--amber);border-radius:9px;padding:8px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+  .card.locked{opacity:.72}
+  .card.locked .sets{filter:grayscale(.3)}
+  .presshint{display:none;margin-top:8px;font-size:11.5px;font-weight:700;color:#e8776f;background:rgba(200,50,60,.10);border-radius:8px;padding:7px 9px}
+  .card.locked .presshint{display:block}
+  .sorelbl{font-size:12px;color:var(--muted);font-weight:700;margin:12px 0 6px}
+  .tchip.warn{border-color:var(--warn);color:var(--warn)}
+  .flagbadge{font-size:10px;font-weight:800;border-radius:6px;padding:2px 7px;background:rgba(200,50,60,.14);color:#e8776f;white-space:nowrap}
+  .corr-tbl{width:100%;border-collapse:collapse;font-size:13px}
+  .corr-tbl th,.corr-tbl td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}
+  .corr-tbl td.n,.corr-tbl th.n{text-align:right;font-family:var(--mono)}
+  .corr-note{font-size:11.5px;color:var(--muted);line-height:1.5;margin:8px 2px 0}
+  .sore-item{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;padding:8px 0;border-top:1px solid var(--line)}
+  .sore-item .x{background:none;border:none;color:var(--muted2);cursor:pointer;font-size:15px;padding:0 4px}
+  .otherrow{display:flex;gap:8px;margin:0 18px}
+  .olbtn{flex:1;background:var(--surface);border:1px solid var(--line);color:var(--text);border-radius:12px;padding:12px 0;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
+  .olbtn.on{border-color:var(--cyan);color:var(--cyan);background:rgba(95,179,196,.08)}
+  .olform{margin:10px 18px 0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px}
+  .olform .f.full{margin-top:10px}
+  .olnote{font-size:11.5px;color:var(--warn);line-height:1.5;margin:8px 2px 0}
+  .zone2{font-size:11.5px;color:var(--cyan);line-height:1.5;margin:8px 2px 2px;font-weight:600}
+  .tchip.disabled{opacity:.45;text-decoration:line-through;cursor:not-allowed}
+  .todaysched{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:12px 18px 0;padding:10px 13px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+  .todaysched .ts-lbl{font-size:11.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+  .todaysched .ts-sess{font-size:14px;font-weight:800}
+  .todaysched.t-cardio .ts-sess{color:var(--cyan)}
+  .todaysched.t-lift .ts-sess{color:var(--amber)}
+  .todaysched .ts-btn{margin-left:auto;background:var(--accent);color:#fff;border:none;border-radius:9px;padding:7px 12px;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+  .todaysched .ts-on{margin-left:auto;font-size:12px;color:var(--ok);font-weight:800}
+  .schedgrid{margin:0 18px;display:flex;flex-direction:column;gap:6px}
+  .schedrow{display:flex;align-items:center;gap:10px;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font:inherit;cursor:pointer;text-align:left}
+  .schedrow .sd-wk{font-weight:800;width:38px;color:var(--muted)}
+  .schedrow .sd-lbl{font-weight:700}
+  .schedrow .sd-tap{margin-left:auto;font-size:11px;color:var(--muted2)}
+  .chip.recal{background:rgba(95,179,196,.16);color:var(--cyan);font-weight:800;letter-spacing:.3px}
+  .hcards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 18px}
+  .hcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .hc-lbl{font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+  .hc-val{font-family:var(--mono);font-size:23px;font-weight:800;margin-top:3px}
+  .hc-val .hc-u{font-size:12px;color:var(--muted);margin-left:4px;font-weight:600}
+  .hc-bar{height:6px;border-radius:4px;background:var(--line);margin:8px 0 6px;overflow:hidden}
+  .hc-bar span{display:block;height:100%;border-radius:4px}
+  .hc-bar span.good{background:var(--ok)} .hc-bar span.warn{background:var(--warn)}
+  .hc-sub{font-size:11px;color:var(--muted);line-height:1.4}
+  .hc-sub .good{color:var(--ok);font-weight:700} .hc-sub .warn{color:var(--warn);font-weight:700}
 
   .note{margin:12px 18px 0;background:var(--surface);border:1px solid var(--line);border-radius:12px;
     padding:10px 13px;font-size:12.5px;line-height:1.5;color:var(--muted);display:flex;gap:9px;align-items:flex-start}
@@ -242,8 +299,10 @@
 <!-- ============ TRAIN ============ -->
 <div class="page on" id="pg-train">
   <div class="bpanel" id="blockPanel"></div>
+  <div class="todaysched" id="todaySched"></div>
   <div class="daytabs" id="daytabs"></div>
   <button class="expressbtn" id="expressBtn" type="button"></button>
+  <div class="presscap" id="pressCap"></div>
   <div class="note" id="resumeNote" style="display:none">↩︎ <span><b>Resumed your in-progress session.</b> Everything you'd entered is intact.</span></div>
   <div class="note">🛟 <span><b>Auto-saves on every tap.</b> Lock your phone, switch apps, close the tab — your session survives on this device. Finish with “Complete session” to bank it into History.</span></div>
   <div class="sect"><h2>Warm-up</h2><span class="meta">~4m</span></div>
@@ -256,6 +315,47 @@
   </div>
   <div class="footnote">🆕 = no history — pick a load with 3–4 reps in the tank; that becomes baseline.<br>
     Prefilled weights come from your last log with §8 double-progression already applied. Data wins over plan.</div>
+
+  <div class="sect"><h2>Other session</h2><span class="meta">cardio · class · activity</span></div>
+  <div class="otherrow">
+    <button class="olbtn" id="logCardioBtn" type="button">＋ Cardio</button>
+    <button class="olbtn" id="logClassBtn" type="button">＋ Class / activity</button>
+  </div>
+
+  <div class="olform" id="cardioForm" style="display:none">
+    <div class="sorelbl">Modality</div>
+    <div class="chips" id="cardioMode">
+      <div class="tchip on" data-v="stationary bike">bike</div>
+      <div class="tchip" data-v="elliptical">elliptical</div>
+      <div class="tchip" data-v="incline walk">incline walk</div>
+      <div class="tchip" data-v="other">other</div>
+      <div class="tchip disabled" data-v="running" aria-disabled="true">running 🚫</div>
+    </div>
+    <div class="olnote">🚫 Running is held pending your knee evaluation and the Broström ankle — low-impact only for now.</div>
+    <div class="zone2">Zone 2 = conversational pace: full sentences, can’t comfortably sing.</div>
+    <label class="f full"><span>Duration (min)</span><input type="number" id="cardioMin" inputmode="numeric" placeholder="25"></label>
+    <label class="f full"><span>Average HR <span style="color:var(--muted2)">(optional)</span></span><input type="number" id="cardioHr" inputmode="numeric" placeholder="bpm"></label>
+    <div class="sorelbl">Session RPE</div>
+    <div class="chips" id="cardioRpe"></div>
+    <label class="f full" style="margin-top:10px"><span>Notes</span><input type="text" id="cardioNote" placeholder="how it felt"></label>
+    <button class="cta" id="cardioSave" style="width:100%;margin-top:12px">Log cardio session</button>
+  </div>
+
+  <div class="olform" id="classForm" style="display:none">
+    <div class="sorelbl">Type</div>
+    <div class="chips" id="classType">
+      <div class="tchip on" data-v="class">class</div>
+      <div class="tchip" data-v="walk">walk</div>
+      <div class="tchip" data-v="GPP">GPP</div>
+      <div class="tchip" data-v="other">other</div>
+    </div>
+    <label class="f full" style="margin-top:10px"><span>Name</span><input type="text" id="className" placeholder="e.g. BJJ, yoga, hike"></label>
+    <label class="f full"><span>Duration (min)</span><input type="number" id="classMin" inputmode="numeric" placeholder="60"></label>
+    <label class="f full"><span>Pressing-sets estimate</span><input type="number" id="classPress" inputmode="numeric" placeholder="0"></label>
+    <div class="olnote">Rough count of hard pressing efforts — this feeds the weekly shoulder cap.</div>
+    <label class="f full" style="margin-top:10px"><span>Notes</span><input type="text" id="classNote" placeholder="optional"></label>
+    <button class="cta" id="classSave" style="width:100%;margin-top:12px">Log activity</button>
+  </div>
 </div>
 
 <!-- ============ TELEMETRY ============ -->
@@ -307,13 +407,36 @@
     <button class="cta" id="tSave">Save entry</button>
   </div>
   <div class="footnote">One line a day keeps the coach informed. Paste the string to Claude at your weekly check-in.</div>
+
+  <div class="tcard" id="soreCard">
+    <div class="tlbl"><span class="name">Soreness flag</span><span class="unit">retroactive · auto-links the prior 72 h</span></div>
+    <div class="sorelbl">Joint</div>
+    <div class="chips" id="soreJoint">
+      <div class="tchip" data-v="shoulder">shoulder</div>
+      <div class="tchip" data-v="knee">knee</div>
+      <div class="tchip" data-v="ankle">ankle</div>
+      <div class="tchip" data-v="back">back</div>
+      <div class="tchip" data-v="other">other</div>
+    </div>
+    <div class="sorelbl">Severity <span class="unit">1 = niggle · 5 = can't train it</span></div>
+    <div class="chips" id="soreSev"></div>
+    <label class="f full" style="margin-top:12px"><span>Date noticed</span><input type="date" id="soreDate"></label>
+    <label class="f full" style="margin-top:10px"><span>Note (optional)</span><input type="text" id="soreNote" placeholder="e.g. front delt ached overnight"></label>
+    <button class="cta" id="soreSave" style="margin-top:12px;width:100%">Flag soreness</button>
+    <div id="soreRecent"></div>
+    <div class="footnote" style="margin-top:10px">The shoulder's payback is delayed — log it whenever you notice it, even days later. It links back to the sessions that likely caused it.</div>
+  </div>
 </div>
 
 <!-- ============ TRENDS ============ -->
 <div class="page" id="pg-trends">
+  <div class="sect"><h2>Health</h2><span class="meta" style="color:var(--ok);font-family:var(--mono);font-size:11px">GOALS FIRST</span></div>
+  <div id="healthCards"></div>
+  <div class="sect"><h2>Shoulder-flag correlation</h2><span class="meta" style="color:var(--muted2);font-family:var(--mono);font-size:11px">72 H WINDOW</span></div>
+  <div id="soreCorr"></div>
   <div class="sect"><h2>Personal records</h2><span class="meta" style="color:var(--amber);font-family:var(--mono);font-size:11px">EPLEY e1RM</span></div>
   <div class="tblcard"><table id="prTable"></table></div>
-  <div class="footnote" style="margin-top:8px">Epley inflates above ~10–12 reps — trust it most on sets under 10.</div>
+  <div class="footnote" style="margin-top:8px">Strength still matters — just no longer top billing. Epley inflates above ~10–12 reps; trust it most on sets under 10.</div>
   <div class="sect"><h2>Sessions</h2><span class="meta" id="sessCount"></span></div>
   <div id="histList"></div>
   <div class="sect"><h2>Telemetry log</h2><span class="meta" id="teleCount"></span></div>
@@ -333,12 +456,18 @@
     <button class="vbtn danger" id="vReset">⚠︎ Reset app<small>Erase local data (export first!)</small></button>
   </div>
   <input type="file" id="vFile" accept="application/json" style="display:none">
+  <div class="sect"><h2>Weekly schedule</h2><span class="meta" style="color:var(--muted2);font-size:11px">tap a day to change</span></div>
+  <div id="schedEditor" class="schedgrid"></div>
+  <div class="footnote">Fixed weekday plan. Train opens on today's session; you can still pick any day from the tabs, and a missed day is just skipped — no penalty.</div>
   <div class="sect"><h2>Profile & rules</h2></div>
   <div class="prof">
-    <span class="tagline">Casino Royale lean recomp</span> — V-taper: lateral delts · upper chest · lats · arms. Legs proportional.<br><br>
-    <b>Mission:</b> preserve + build muscle in a physician-supervised GLP-1 deficit. Protein ~130–165 g/day is the lever.<br>
-    <b>Guardrails:</b> shoulder → neutral-grip/landmine pressing · back → anterior-load + chest-supported · R ankle (Broström) → heel-elevate, cautious single-leg.<br>
-    <b>Progression (§8):</b> top of range on all sets at ≤ target RPE → +5 upper / +5–10 lower · reps hit but RPE high → hold · missed / spiking → back off · 2+ bad sessions → deload.<br>
+    <span class="tagline">Health-first training</span> — goal order: <b>health → cardio → joints → agility → aesthetics</b>. The V-taper (lateral delts · upper chest · lats · arms) still matters — just last, not first.<br><br>
+    <b>Mission:</b> preserve + build muscle in a physician-supervised GLP-1 deficit (protein ~130–165 g/day is the lever), with cardiovascular health and pain-free joints ranking above the look.<br>
+    <b>Shoulder — chronic, managed ceiling:</b> not an injury in rehab, not on a re-entry ladder to "full." It's a permanent limitation. The payback is <b>delayed 24–72 h</b>, so the pre-committed weekly pressing cap — not in-session pain — is the real guardrail.<br>
+    <b>Knee — flagged, undiagnosed:</b> pain after mild activity. <b>Low-impact only</b> until evaluated; running is held.<br>
+    <b>Guardrails:</b> shoulder → neutral-grip/landmine pressing + capped weekly pressing volume · knee → low-impact only, no running/impact · back → anterior-load + chest-supported · R ankle (Broström) → heel-elevate, cautious single-leg.<br>
+    <b>Action items:</b> ⏳ VA PT evaluation for knees.<br>
+    <b>Progression (§8):</b> top of range on all sets at ≤ target RPE → +5 upper / +5–10 lower · reps hit but RPE high → hold · missed / spiking → back off · 2+ bad sessions → deload · load older than 21 days → recalibrate.<br>
     <b>RPE ruler:</b> 10 = failure · 9 = 1 RIR · 8 = 2 RIR · 7 = 3 RIR · 6 = 4 RIR.
   </div>
   <div class="footnote">Zero network calls — a CSP header blocks them at the browser level.<br>Your data lives on this device. The landlord can't break what he doesn't host. 🛰️</div>
@@ -360,7 +489,7 @@
    Durable core: storage, progression engine, math. No model in the loop.
    AI layer: you copy shorthand out to Claude; Claude never holds the data. */
 
-const APP = "qbranch", SCHEMA = 3, DB_KEY = "qbranch:v1";
+const APP = "qbranch", SCHEMA = 4, DB_KEY = "qbranch:v1";
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const todayISO = () => new Date().toLocaleDateString("en-CA");
@@ -376,11 +505,11 @@ const BASE = {
     ex:[
       {name:"Goblet Squat",tag:"Quads · Legs",muscle:"Legs",sets:3,lo:8,hi:10,rpe:"6–7",rpeMax:7,rest:90,mode:"wt",inc:5,
        cues:"<b>Heel-elevate</b> if the ankle limits depth. Tall chest, controlled descent — own the bottom.",sub:"Leg press"},
-      {name:"DB Incline Press",tag:"Upper Chest",muscle:"Chest",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
+      {name:"DB Incline Press",pressing:true,tag:"Upper Chest",muscle:"Chest",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
        cues:"Elbows ~45°, <b>not flared</b> — shoulder-friendly. Full but pain-free range.",sub:"Machine chest press"},
       {name:"Chest-Supported Row",tag:"Back · Lats",muscle:"Back",sets:3,lo:10,hi:12,rpe:"7",rpeMax:7,rest:75,mode:"wt",inc:5,
        cues:"Chest on the bench <b>spares your low back</b>. Drive elbows back, squeeze the blades.",sub:"Seated cable row"},
-      {name:"DB Lateral Raise",tag:"Side Delts",muscle:"Side Delts",sets:3,lo:12,hi:15,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
+      {name:"DB Lateral Raise",pressing:true,tag:"Side Delts",muscle:"Side Delts",sets:3,lo:12,hi:15,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
        cues:"Light — <b>no swing</b>. Lead with the elbows. This is your taper-builder.",sub:"Cable lateral raise"},
       {name:"Face Pull",tag:"Rear Delts · Shoulder health",muscle:"Rear Delts",sets:2,lo:15,hi:15,rpe:"6",rpeMax:6,rest:45,mode:"wt",inc:5,ss:"A",
        cues:"Pull to your eyes, rotate knuckles back. <b>Shoulder insurance.</b>",sub:"Band pull-apart"},
@@ -406,13 +535,13 @@ const BASE = {
   C:{focus:"Push / Delts emphasis",
     warm:[["Row or stair master, easy","3 min"],["Shoulder circles + arm swings","×10 each"],["Wall slides","×10"]],
     ex:[
-      {name:"Landmine Press",tag:"Shoulders · Shoulder-safe",muscle:"Shoulders",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
+      {name:"Landmine Press",pressing:true,tag:"Shoulders · Shoulder-safe",muscle:"Shoulders",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
        cues:"The <b>angled path is the point</b> — press up-and-in, half-kneeling if the back wants support.",sub:"Neutral-grip DB shoulder press"},
-      {name:"Flat DB Press",tag:"Chest",muscle:"Chest",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
+      {name:"Flat DB Press",pressing:true,tag:"Chest",muscle:"Chest",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
        cues:"Elbows ~45°, feet planted. <b>Pain-free range beats full range.</b>",sub:"Machine chest press"},
-      {name:"Arnold Press",tag:"Shoulders · Delts",muscle:"Shoulders",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
+      {name:"Arnold Press",pressing:true,tag:"Shoulders · Delts",muscle:"Shoulders",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
        cues:"Start palms-in at the chin, <b>rotate to palms-out</b> as you press up. Keep the turn smooth and the range <b>pain-free</b> — ease off the bottom rotation if the shoulder barks.",sub:"Neutral-grip DB shoulder press"},
-      {name:"Cable Lateral Raise",tag:"Side Delts",muscle:"Side Delts",sets:3,lo:12,hi:15,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
+      {name:"Cable Lateral Raise",pressing:true,tag:"Side Delts",muscle:"Side Delts",sets:3,lo:12,hi:15,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
        cues:"Constant tension the DBs can't give. <b>Lead with the elbow</b>, no shrug.",sub:"DB lateral raise"},
       {name:"Rope Pushdown",tag:"Arms · Triceps",muscle:"Arms",sets:2,lo:10,hi:12,rpe:"8",rpeMax:8,rest:60,mode:"wt",inc:5,
        cues:"Elbows pinned; <b>spread the rope</b> at the bottom.",sub:"DB overhead extension"},
@@ -435,7 +564,7 @@ const EXPRESS = {
   ex:[
     {name:"KB Goblet Squat",tag:"Legs · KB",muscle:"Legs",sets:3,lo:10,hi:15,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
      cues:"Hold the 35 at your chest, tall spine. <b>Heel-elevate</b> if the ankle limits depth.",sub:"Bodyweight squat"},
-    {name:"Push-up",tag:"Push · Bodyweight",muscle:"Chest",sets:3,lo:8,hi:15,rpe:"8",rpeMax:8,rest:60,mode:"wt",inc:0,
+    {name:"Push-up",pressing:true,tag:"Push · Bodyweight",muscle:"Chest",sets:3,lo:8,hi:15,rpe:"8",rpeMax:8,rest:60,mode:"wt",inc:0,
      cues:"Ribs down, body in one line. <b>Hands to a couch or counter</b> to scale — keep the reps honest.",sub:"Incline push-up"},
     {name:"KB Single-Arm Row",tag:"Pull · KB",muscle:"Back",sets:3,lo:10,hi:12,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
      cues:"<b>Free hand braced on your thigh</b> — takes the low back out of it. 10–12/side. Drive the elbow back, squeeze.",sub:"Table row"},
@@ -531,13 +660,55 @@ const TIME_NAMES=new Set();
 ["A","B","C"].forEach(day=>BASE[day].ex.forEach(d=>{ if(d.mode==="time"){ TIME_NAMES.add(d.name.toLowerCase()); const a=altName(d); if(a) TIME_NAMES.add(a.toLowerCase()); }}));
 function isTimeName(n){ return TIME_NAMES.has(String(n||"").toLowerCase()); }
 
+/* pressing-set attribution (Change 3): names of every pressing-tagged movement
+   — presses + lateral raises — plus each one's swap alternate, since a swapped
+   set logs the alternate's name and must still count against the shoulder cap. */
+const PRESSING_NAMES=new Set();
+(function(){
+  const add=d=>{ if(d && d.pressing){ PRESSING_NAMES.add(d.name.toLowerCase()); const a=altName(d); if(a) PRESSING_NAMES.add(a.toLowerCase()); } };
+  ["A","B","C"].forEach(day=>BASE[day].ex.forEach(add));
+  EXPRESS.ex.forEach(add);
+})();
+function isPressingName(n){ return PRESSING_NAMES.has(String(n||"").toLowerCase()); }
+
 /* ---------- storage: single versioned store, autosave, safe fallback ---------- */
+/* Editable-by-data defaults (never magic numbers in the render path). All of
+   these live on db.settings / db.schedule so they can be edited and survive in
+   backups; render/logic reads them through getSettings()/db.schedule. */
+const DEFAULT_SETTINGS = {
+  pressingCapPerWeek: 6,      // Change 3 — hard weekly pressing-set ceiling
+  staleDays: 21,              // Change 7 — prefill goes RECALIBRATE past this age
+  sorenessWindowHours: 72,    // Change 4 — retroactive attribution window
+  zone2Lo: 50, zone2Hi: 75,   // Change 6 — weekly Zone-2 minutes target band
+};
+/* Weekday → session. type:"lift" carries a day A/B/C; "cardio" a label;
+   "open" is unscheduled. Stored as data so the user can override any day. */
+const DEFAULT_SCHEDULE = {
+  Mon:{type:"lift",   day:"A"},
+  Tue:{type:"cardio", label:"Zone 2 · 25 min"},
+  Wed:{type:"lift",   day:"B"},
+  Thu:{type:"cardio", label:"Zone 2 · 25 min + core/mobility"},
+  Fri:{type:"lift",   day:"C"},
+  Sat:{type:"open"},
+  Sun:{type:"open"},
+};
+const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+/* Stable-ish unique id for sessions/flags so Change 4 can link them both ways.
+   Browser context — Date.now()/Math.random() are fine here (this is not a
+   workflow script); collisions are astronomically unlikely for a single user. */
+let _uidn = 0;
+function uid(p){ return (p||"id")+"-"+Date.now().toString(36)+"-"+(_uidn++).toString(36)+Math.floor(Math.random()*1e6).toString(36); }
+function getSettings(){ return Object.assign({}, DEFAULT_SETTINGS, (db&&db.settings)||{}); }
 function seed(){
   return {
     app:APP, schema:SCHEMA, created:todayISO(),
     program:{i:0, done:0},
+    settings:{...DEFAULT_SETTINGS},
+    schedule:JSON.parse(JSON.stringify(DEFAULT_SCHEDULE)),
+    sorenessFlags:[],
+    pressingOverrides:[],
     history:[{
-      date:"2026-07-05", day:"A", block:0, exercises:[
+      id:"seed-2026-07-05-A", type:"lift", date:"2026-07-05", day:"A", block:0, flags:[], exercises:[
         {name:"Goblet Squat", sets:[{rep:"10",wt:"35",rpe:""},{rep:"10",wt:"35",rpe:"7-8"},{rep:"10",wt:"35",rpe:"7-8"}], note:"quad cramp after S1 — pushed through"},
         {name:"DB Incline Press", sets:[{rep:"11",wt:"25",rpe:""},{rep:"11",wt:"25",rpe:""},{rep:"11",wt:"25",rpe:""}]},
         {name:"Chest-Supported Row", sets:[{rep:"11",wt:"45",rpe:""},{rep:"11",wt:"45",rpe:""},{rep:"11",wt:"45",rpe:""}]},
@@ -567,6 +738,18 @@ const MIGRATIONS = {
     (d.history||[]).forEach(h=>{ if(h.block==null) h.block=0; });
     return d;
   },
+  4: d => { // health-first rework: session ids/types, schedule, cap settings, soreness log
+    d.settings   = Object.assign({}, DEFAULT_SETTINGS, d.settings||{});
+    d.schedule   = d.schedule || JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+    d.sorenessFlags   = Array.isArray(d.sorenessFlags)   ? d.sorenessFlags   : [];
+    d.pressingOverrides = Array.isArray(d.pressingOverrides) ? d.pressingOverrides : [];
+    (d.history||[]).forEach((h,i)=>{
+      if(!h.id)   h.id   = "s"+i+"-"+(h.date||"?")+"-"+(h.day||"x"); // stable for existing rows
+      if(!h.type) h.type = "lift";                                    // all prior sessions were lifts
+      if(!Array.isArray(h.flags)) h.flags = [];                       // attributed soreness-flag ids
+    });
+    return d;
+  },
 };
 function migrate(d){
   if(!d) return d;
@@ -580,6 +763,13 @@ function migrate(d){
   if(!d.program || typeof d.program.i!=="number") d.program={i:0, done:0};
   d.program.i=Math.max(0, Math.min(BLOCKS.length-1, d.program.i|0));
   d.program.done=Math.max(0, d.program.done|0);
+  // invariants for the v4 additions (defensive regardless of migration path)
+  d.settings = Object.assign({}, DEFAULT_SETTINGS, d.settings||{});
+  if(!d.schedule || typeof d.schedule!=="object") d.schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+  if(!Array.isArray(d.sorenessFlags)) d.sorenessFlags=[];
+  if(!Array.isArray(d.pressingOverrides)) d.pressingOverrides=[];
+  (d.history||[]).forEach((h,i)=>{ if(!h.id) h.id="s"+i+"-"+(h.date||"?")+"-"+(h.day||"x");
+    if(!h.type) h.type="lift"; if(!Array.isArray(h.flags)) h.flags=[]; });
   return d;
 }
 let db, memOnly=false, saveT;
@@ -612,6 +802,146 @@ persist(); // bake seed/migration into storage on boot
 /* active program for the current block — rebuilt whenever the block changes */
 let PROGRAM = blockProgram(db.program.i);
 function rebuildProgram(){ PROGRAM = blockProgram(db.program.i); }
+
+/* ---------- pressing volume cap (Change 3) — the shoulder guardrail ----------
+   The shoulder is a managed ceiling and its payback is DELAYED, so "stop when it
+   hurts" is not enough; the cap is a pre-committed weekly budget. Rolling 7-day
+   window (not calendar). Counts banked sets + live in-progress sets + any
+   class/external pressing estimate. Cap + window live in db.settings (editable).*/
+function daysAgoISO(n){ const d=new Date(todayISO()+"T00:00:00"); d.setDate(d.getDate()-n); return d.toLocaleDateString("en-CA"); }
+function daysSince(iso){ const a=new Date(todayISO()+"T00:00:00"), b=new Date((iso||todayISO())+"T00:00:00"); return Math.round((a-b)/86400000); }
+function pressingSetsBanked(sinceISO){
+  let n=0;
+  db.history.forEach(h=>{
+    if(h.date < sinceISO) return;
+    (h.exercises||[]).forEach(e=>{ if(isPressingName(e.name)) n += e.sets.filter(s=>s.rep!=="").length; });
+    if(typeof h.pressingEst==="number") n += h.pressingEst; // class/external estimate (Change 5)
+  });
+  return n;
+}
+function pressingSetsLive(){
+  let n=0;
+  ["A","B","C"].forEach(day=>{ const s=db.sessions[day]; if(!s||!s.data) return;
+    s.data.forEach(x=>{ if(isPressingName(x.name)) n += x.sets.filter(v=>v.rep!=="").length; }); });
+  return n;
+}
+function pressingSetsWeek(){ return pressingSetsBanked(daysAgoISO(6)) + pressingSetsLive(); } // last 7 days inclusive
+function pressCapState(){ const cap=getSettings().pressingCapPerWeek|0, n=pressingSetsWeek(); return {cap, n, over:n>=cap}; }
+/* eligible to SUGGEST (never auto) a manual cap bump: actually pressing regularly
+   and zero shoulder soreness flags in the trailing 14 days = two clean weeks. */
+function twoCleanShoulderWeeks(){
+  const since=daysAgoISO(13), cap=getSettings().pressingCapPerWeek|0;
+  const flagged=(db.sorenessFlags||[]).some(f=>f.joint==="shoulder" && f.date>=since);
+  return !flagged && pressingSetsBanked(since) >= cap;
+}
+
+/* ---------- delayed soreness flags (Change 4) — connect payback to cause -------
+   The app previously had no way to link "Saturday's session" to "Monday's
+   shoulder." A flag is retroactive; on submit it attributes to every banked
+   session inside the trailing soreness window (72 h, editable) and links both
+   ways (flag.sessions[] ↔ session.flags[]). */
+function addDaysISO(iso,n){ const d=new Date(iso+"T00:00:00"); d.setDate(d.getDate()+n); return d.toLocaleDateString("en-CA"); }
+function attributeSoreness(flag){
+  const days=Math.ceil((getSettings().sorenessWindowHours||72)/24);
+  const lo=addDaysISO(flag.date,-days);
+  flag.sessions=[];
+  db.history.forEach(h=>{
+    if(h.date>=lo && h.date<=flag.date){
+      flag.sessions.push(h.id);
+      if(!Array.isArray(h.flags)) h.flags=[];
+      if(!h.flags.includes(flag.id)) h.flags.push(flag.id);
+    }
+  });
+  return flag.sessions.length;
+}
+function removeSoreness(id){
+  db.history.forEach(h=>{ if(Array.isArray(h.flags)) h.flags=h.flags.filter(x=>x!==id); });
+  db.sorenessFlags=(db.sorenessFlags||[]).filter(x=>x.id!==id);
+  persist(); renderTrends(); renderSoreRecent();
+}
+function flagsForSession(h){ const byId={}; (db.sorenessFlags||[]).forEach(f=>byId[f.id]=f);
+  return (h.flags||[]).map(id=>byId[id]).filter(Boolean); }
+function sessionFlagBadge(h){
+  const fs=flagsForSession(h); if(!fs.length) return "";
+  const byJoint={}; fs.forEach(f=>{ byJoint[f.joint]=Math.max(byJoint[f.joint]||0, f.severity||0); });
+  return " "+Object.keys(byJoint).map(j=>`<span class="flagbadge">⚠ ${esc(j)} ${byJoint[j]}</span>`).join(" ");
+}
+/* Honest correlation: pressing volume per session vs. whether a shoulder flag
+   was noticed within 72 h after. Raw counts + rates; no rate for thin buckets. */
+function shoulderCorrelation(){
+  const lifts=db.history.filter(h=>h.type==="lift" || h.exercises);
+  const shId=new Set((db.sorenessFlags||[]).filter(f=>f.joint==="shoulder").map(f=>f.id));
+  const rows=lifts.map(h=>{ let p=0; (h.exercises||[]).forEach(e=>{ if(isPressingName(e.name)) p+=e.sets.filter(s=>s.rep!=="").length; });
+    return {press:p, flagged:(h.flags||[]).some(id=>shId.has(id))}; });
+  const buckets=[["0",0,0],["1–3",1,3],["4–6",4,6],["7+",7,Infinity]];
+  const data=buckets.map(([lbl,lo,hi])=>{ const inB=rows.filter(r=>r.press>=lo&&r.press<=hi);
+    return {lbl, n:inB.length, k:inB.filter(r=>r.flagged).length}; });
+  return {data, totalSessions:rows.length, totalShoulderFlags:shId.size};
+}
+function renderCorr(){
+  const el=$("soreCorr"); if(!el) return;
+  const {data,totalSessions,totalShoulderFlags}=shoulderCorrelation();
+  const small = totalShoulderFlags<3 || totalSessions<8;
+  const body=data.map(d=>`<tr><td>${d.lbl}</td><td class="n">${d.n}</td><td class="n">${d.k}</td><td class="n">${d.n>=3?Math.round(d.k/d.n*100)+"%":"—"}</td></tr>`).join("");
+  el.innerHTML=`<div class="tblcard"><table class="corr-tbl">
+      <tr><th>Pressing sets / session</th><th class="n">sessions</th><th class="n">→ shoulder</th><th class="n">rate</th></tr>
+      ${body}</table></div>
+    <div class="corr-note">${ small
+      ? `Not enough to read into yet — ${totalShoulderFlags} shoulder flag${totalShoulderFlags===1?"":"s"} across ${totalSessions} session${totalSessions===1?"":"s"}. Rates show only for buckets with ≥3 sessions.`
+      : `A session counts as "→ shoulder" when a shoulder flag was noticed within 72 h after it. Raw rates — a signal to weigh, not proof.` }</div>`;
+}
+function renderSoreRecent(){
+  const el=$("soreRecent"); if(!el) return;
+  const fs=[...(db.sorenessFlags||[])].sort((a,b)=>a.date<b.date?1:-1).slice(0,6);
+  el.innerHTML = fs.length ? `<div class="sorelbl">Recent flags</div>`+fs.map(f=>
+     `<div class="sore-item"><span>⚠ <b>${esc(f.joint)}</b> ${f.severity}/5 · ${esc(f.date)} · ${f.sessions.length} session${f.sessions.length===1?"":"s"}</span><button class="x" data-id="${esc(f.id)}" title="remove flag">✕</button></div>`).join("") : "";
+  el.querySelectorAll(".x").forEach(b=>b.onclick=()=>removeSoreness(b.dataset.id));
+}
+
+/* ---------- weekday schedule (Change 1) — fixed days, not a floating rotation --
+   db.schedule maps weekday → session; the Train tab opens on today's scheduled
+   session. A/B/C day-tabs remain as override + off-schedule fallback rotation.
+   Missed days are never guilt-tripped or auto-rescheduled — just shown. */
+const WEEK_ORDER=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const SCHED_OPTIONS=[
+  {type:"open"},
+  {type:"lift",day:"A"},{type:"lift",day:"B"},{type:"lift",day:"C"},
+  {type:"cardio",label:"Zone 2 · 25 min"},
+  {type:"cardio",label:"Zone 2 · 25 min + core/mobility"},
+];
+function schedLabel(e){
+  if(!e||e.type==="open") return "Optional / rest";
+  if(e.type==="lift")   return "Full Body "+e.day;
+  if(e.type==="cardio") return e.label||"Zone 2 cardio";
+  return "—";
+}
+function weekdayKey(iso){ return DOW[new Date((iso||todayISO())+"T00:00:00").getDay()]; }
+function todaySched(){ return db.schedule[weekdayKey()]||{type:"open"}; }
+function defaultDayForToday(){ const s=todaySched(); return (s.type==="lift"&&s.day)?s.day:"A"; }
+function renderTodaySched(){
+  const el=$("todaySched"); if(!el) return;
+  const wk=weekdayKey(), s=db.schedule[wk]||{type:"open"};
+  let action="";
+  if(s.type==="lift")        action = curDay===s.day ? `<span class="ts-on">on it ✓</span>` : `<button class="ts-btn" id="tsGo">Go to Full Body ${esc(s.day)} →</button>`;
+  else if(s.type==="cardio") action = `<button class="ts-btn" id="tsCardio">Log cardio →</button>`;
+  el.className="todaysched t-"+s.type;
+  el.innerHTML=`<span class="ts-lbl">📅 Today · ${wk}</span><span class="ts-sess">${esc(schedLabel(s))}</span>${action}`;
+  const g=$("tsGo");     if(g) g.onclick=()=>{ curDay=s.day; ensureSession(); renderTrain(); };
+  const c=$("tsCardio"); if(c) c.onclick=()=>{ showOther("cardio"); const f=$("cardioForm"); if(f&&f.scrollIntoView) f.scrollIntoView({behavior:"smooth"}); };
+}
+function renderSchedule(){
+  const el=$("schedEditor"); if(!el) return;
+  el.innerHTML=WEEK_ORDER.map(wk=>{ const e=db.schedule[wk]||{type:"open"};
+    return `<button class="schedrow" data-day="${wk}" type="button"><span class="sd-wk">${wk}</span><span class="sd-lbl">${esc(schedLabel(e))}</span><span class="sd-tap">tap ›</span></button>`;
+  }).join("");
+  el.querySelectorAll(".schedrow").forEach(b=>b.onclick=()=>cycleSchedule(b.dataset.day));
+}
+function cycleSchedule(wk){
+  const cur=db.schedule[wk]||{type:"open"};
+  const idx=SCHED_OPTIONS.findIndex(o=>o.type===cur.type && (o.day||"")===(cur.day||"") && (o.label||"")===(cur.label||""));
+  db.schedule[wk]=JSON.parse(JSON.stringify(SCHED_OPTIONS[(idx+1)%SCHED_OPTIONS.length]));
+  persist(); renderSchedule(); renderTodaySched();
+}
 
 function flashSaved(){ const el=$("saveInd"); if(!el)return;
   el.textContent = memOnly ? "in-memory ⚠" : "saved ✓";
@@ -649,6 +979,11 @@ function prescribe(def){
   }
   const perfs=lastPerfs(def.name,2);
   if(!perfs.length) return {wt:null, fresh:true, why:"🆕 No history — calibrate with 3–4 reps in the tank."};
+  // Change 7 — stale load: don't prefill a number the body may have moved past.
+  const ageDays=daysSince(perfs[0].date);
+  if(ageDays > (getSettings().staleDays||21))
+    return {wt:null, fresh:true, recalibrate:true, ageDays,
+      why:`<b>RECALIBRATE</b> — last logged ${ageDays} days ago. Pick a load at RPE 6–7 (3–4 reps in reserve); that becomes the new baseline, then double-progression resumes.`};
   const st=perfStats(perfs[0].e);
   if(!st) return {wt:null, fresh:true, why:"🆕 No logged sets yet — calibrate."};
   const wt=st.wt, maxRPE=st.maxRPE, prev=perfs[1]?perfStats(perfs[1].e):null;
@@ -675,7 +1010,7 @@ function prescribe(def){
 }
 
 /* ---------- session state (one in-progress session per day) ---------- */
-let curDay = ["A","B","C"].find(d=>db.sessions[d]) || "A";
+let curDay = ["A","B","C"].find(d=>db.sessions[d]) || defaultDayForToday();
 function curSession(){ return db.sessions[curDay]; }
 function freshSession(day){
   return {date:todayISO(), day, data:PROGRAM[day].ex.map(d=>({
@@ -786,6 +1121,48 @@ function renderBlock(){
   const cp=$("bCopyReview"); if(cp&&rv) cp.onclick=()=>copyText(rv.text,"Block review copied for Claude 📋");
   const dm=$("bDismiss"); if(dm) dm.onclick=()=>{ db.lastReview=null; persist(); renderBlock(); };
 }
+/* Persistent pressing-cap banner + its override / suggest-raise controls. */
+function renderPressCap(){
+  const el=$("pressCap"); if(!el) return;
+  const {cap,n,over}=pressCapState();
+  const sess=curSession();
+  const overridden=!!(sess && sess.pressOverride);
+  const pct=cap>0?Math.min(100, Math.round(n/cap*100)):0;
+  const cls = over ? (overridden?"cap-ovr":"cap-hit") : (n>=cap-1?"cap-near":"cap-ok");
+  const msg = over
+    ? (overridden
+        ? "Override active — pressing unlocked for this session. This is delayed-risk volume; back off at the first hint of shoulder chatter."
+        : "At the weekly pressing cap. Further pressing sets are blocked — shoulder payback lands 24–72 h later, so the cap is the guardrail, not pain.")
+    : "Delayed-onset shoulder risk: pressing volume is pre-committed for the week, not judged in the moment.";
+  el.className="presscap "+cls;
+  el.innerHTML=`<div class="pc-top"><span class="pc-lbl">Pressing sets this week</span><span class="pc-num">${n} / ${cap}</span></div>
+    <div class="pc-bar"><span style="width:${pct}%"></span></div>
+    <div class="pc-msg">${msg}</div>
+    ${ over && !overridden ? '<button class="pc-btn" id="pcOverride" type="button">Override &amp; log this session</button>' : '' }
+    ${ twoCleanShoulderWeeks() && !over ? `<button class="pc-raise" id="pcRaise" type="button">2 clean weeks — raise cap to ${cap+1}? (your call)</button>` : '' }`;
+  const ob=$("pcOverride");
+  if(ob) ob.onclick=()=>{ const s=pressCapState();
+    db.pressingOverrides.push({ts:new Date().toISOString(), date:todayISO(), count:s.n, cap:s.cap});
+    if(sess) sess.pressOverride=true; persist(); renderTrain();
+    showToast("Override logged — pressing unlocked for this session"); };
+  const rb=$("pcRaise");
+  if(rb) rb.onclick=()=>{ db.settings.pressingCapPerWeek=cap+1; persist(); renderTrain();
+    showToast(`Pressing cap raised to ${cap+1} — manual change, your call`); };
+}
+/* Live gate: at/over cap (and not overridden), disable the still-empty inputs on
+   pressing cards so no extra pressing set can be logged; filled inputs stay
+   editable for typo fixes. Non-pressing work is never blocked. */
+function updatePressGate(){
+  renderPressCap();
+  const {over}=pressCapState();
+  const sess=curSession();
+  const lock = over && !(sess && sess.pressOverride);
+  document.querySelectorAll('#exlist .card').forEach(card=>{
+    if(card.dataset.press!=="1") return;
+    card.classList.toggle("locked", lock);
+    card.querySelectorAll('input[data-i]').forEach(inp=>{ inp.disabled = lock && inp.value.trim()===""; });
+  });
+}
 function renderTrain(){
   renderBlock();
   ensureSession(); renderDayTabs(); renderWarm();
@@ -803,8 +1180,10 @@ function renderTrain(){
     const alt=altName(def), swapped=!!alt && st.name!==def.name;
     const eff=swapped ? {...def, name:st.name} : def;
     const rx=prescribe(eff);
+    const pressing=!!def.pressing || isPressingName(st.name);
     const card=document.createElement("div");
     card.className="card"+(st.open?" open":"")+(st.done?" done":"")+(def.ss?" ss":"");
+    card.dataset.press = pressing?"1":"";
     const setword = def.mode==="time" ? (def.name==="Plank"?`${def.sets} × ${def.lo}–${def.hi}s`:`${def.sets} × ${def.lo}/side`) : `${def.sets} × ${def.lo}–${def.hi}`;
     let rows="";
     for(let s=0;s<def.sets;s++){
@@ -829,7 +1208,7 @@ function renderTrain(){
           <div class="ename">${esc(eff.name)}${swapped?`<span class="chip swap">⇄ swapped</span>`:(def.rotated?`<span class="new blk">🔄 new this block</span>`:"")}</div>
           <div class="esub"><span>${setword}</span><span class="chip">${esc(def.tag)}</span>
             ${def.rpe!=="—"?`<span class="chip rpe">RPE ${def.rpe}</span>`:""}
-            ${rx.fresh?`<span class="new">🆕</span>`:(rx.wt!=null?`<span class="chip rx">▶ ${rx.wt} lb</span>`:"")}
+            ${rx.recalibrate?`<span class="chip recal">↻ RECALIBRATE</span>`:(rx.fresh?`<span class="new">🆕</span>`:(rx.wt!=null?`<span class="chip rx">▶ ${rx.wt} lb</span>`:""))}
           </div>
         </div><span class="chev">▶</span>
       </div>
@@ -845,6 +1224,7 @@ function renderTrain(){
         ${alt?`<button class="subline swapbtn" type="button">${swapped
               ? `↩︎ Swap back to <b>${esc(def.name)}</b>`
               : `⇄ Swap to <b>${esc(alt)}</b>`}</button>`:""}
+        ${pressing?`<div class="presshint">🔒 Weekly pressing cap reached — override in the banner above to log more.</div>`:""}
         <button class="donebtn">${st.done?"✓ Done":"Mark done"}</button>
       </div>`;
     list.appendChild(card);
@@ -870,6 +1250,7 @@ function renderTrain(){
           if(wtInp){ st.sets[s].wt=wtInp.value.trim(); wtInp.classList.toggle("filled",wtInp.value.trim()!==""); }
         }
         persistSoon(); // debounced: typing is the hot path
+        if(pressing) updatePressGate(); // live cap enforcement as pressing sets are logged
       });
     });
     const restBtn=card.querySelector(".mini.btn");
@@ -883,6 +1264,7 @@ function renderTrain(){
     });
   });
   $("setmeta").textContent = defs.reduce((a,d)=>a+d.sets,0)+" sets";
+  renderTodaySched(); renderPressCap(); updatePressGate();
   persist();
 }
 
@@ -968,7 +1350,7 @@ $("finishBtn").onclick=()=>{
   const sess=curSession();
   const touched=sess.data.some(x=>x.done||x.sets.some(s=>s.rep!==""));
   if(!touched){ showToast("Nothing logged yet — enter at least one set"); return; }
-  const entry={date:sess.date, day:sess.day, block:db.program.i,
+  const entry={id:uid("s"), type:"lift", flags:[], date:sess.date, day:sess.day, block:db.program.i,
     exercises:sess.data.filter(x=>x.done||x.sets.some(s=>s.rep!=="")).map(x=>({
       name:x.name, sets:x.sets.map(s=>({rep:s.rep,wt:s.wt,rpe:s.rpe||""}))}))};
   db.history.push(entry);
@@ -1056,11 +1438,120 @@ $("tSave").onclick=()=>{
   persist(); renderTrends(); showToast(i>=0?"Updated ✓":"Logged ✓");
 };
 
+/* ---------- soreness flag wiring (Change 4) ---------- */
+const SORE={joint:null, sev:null, date:todayISO(), note:""};
+$("soreDate").value=SORE.date;
+$("soreDate").addEventListener("change",e=>{ SORE.date=e.target.value; });
+$("soreJoint").addEventListener("click",e=>{ const c=e.target.closest(".tchip"); if(!c)return;
+  SORE.joint=c.dataset.v; [...$("soreJoint").children].forEach(x=>x.className="tchip"+(x===c?" on":"")); });
+const soreSevW=$("soreSev");
+for(let i=1;i<=5;i++){ const c=document.createElement("div"); c.className="tchip"; c.textContent=i; c.dataset.v=i; c.setAttribute("role","button"); c.tabIndex=0; soreSevW.appendChild(c); }
+soreSevW.addEventListener("click",e=>{ const c=e.target.closest(".tchip"); if(!c)return;
+  SORE.sev=+c.dataset.v; [...soreSevW.children].forEach(x=>x.className="tchip"+(x===c?" on"+(SORE.sev>=4?" warn":""):"")); });
+$("soreNote").addEventListener("input",e=>{ SORE.note=e.target.value; });
+$("soreSave").onclick=()=>{
+  if(!SORE.joint){ showToast("Pick a joint"); return; }
+  if(!SORE.sev){ showToast("Pick a severity 1–5"); return; }
+  const flag={id:uid("f"), joint:SORE.joint, severity:SORE.sev, date:SORE.date||todayISO(), note:SORE.note||"", ts:new Date().toISOString(), sessions:[]};
+  const n=attributeSoreness(flag);
+  db.sorenessFlags.push(flag);
+  persist(); renderTrends(); renderSoreRecent();
+  SORE.joint=null; SORE.sev=null; SORE.note="";
+  [...$("soreJoint").children].forEach(x=>x.className="tchip");
+  [...soreSevW.children].forEach(x=>x.className="tchip");
+  $("soreNote").value="";
+  showToast(n ? `Flagged — linked to ${n} session${n===1?"":"s"} in the prior 72 h` : "Flagged — no sessions in the prior 72 h to link");
+};
+
+/* ---------- other-session logging: cardio + class/external (Changes 2 & 5) ----
+   Cardio and classes are first-class banked sessions (type on the history entry)
+   that count toward adherence like lifts, but do NOT advance the lifting block.
+   Cardio minutes feed the Zone-2 target; a class's pressing estimate feeds the
+   shoulder cap. Running is offered but disabled (knee eval + Broström ankle). */
+function cardioMinutesSince(sinceISO){ let m=0; db.history.forEach(h=>{ if(h.type==="cardio" && h.date>=sinceISO) m+=(parseInt(h.minutes,10)||0); }); return m; }
+const CARDIO={modality:"stationary bike", min:"", hr:"", rpe:null, note:""};
+const CLASSA={activity:"class", name:"", min:"", press:"", note:""};
+function showOther(which){
+  const cf=$("cardioForm"), xf=$("classForm"), cb=$("logCardioBtn"), xb=$("logClassBtn");
+  const openC = which==="cardio" && cf.style.display==="none";
+  const openX = which==="class"  && xf.style.display==="none";
+  cf.style.display=openC?"block":"none"; xf.style.display=openX?"block":"none";
+  cb.classList.toggle("on",openC); xb.classList.toggle("on",openX);
+}
+$("logCardioBtn").onclick=()=>showOther("cardio");
+$("logClassBtn").onclick=()=>showOther("class");
+$("cardioMode").addEventListener("click",e=>{ const c=e.target.closest(".tchip"); if(!c)return;
+  if(c.classList.contains("disabled")){ showToast("Running is on hold — knee eval + Broström ankle. Low-impact only."); return; }
+  CARDIO.modality=c.dataset.v; [...$("cardioMode").children].forEach(x=>x.className="tchip"+(x.dataset.v==="running"?" disabled":"")+(x===c?" on":"")); });
+const cardioRpeW=$("cardioRpe");
+for(let i=1;i<=10;i++){ const c=document.createElement("div"); c.className="tchip"; c.textContent=i; c.dataset.v=i; c.setAttribute("role","button"); c.tabIndex=0; cardioRpeW.appendChild(c); }
+cardioRpeW.addEventListener("click",e=>{ const c=e.target.closest(".tchip"); if(!c)return;
+  CARDIO.rpe=+c.dataset.v; [...cardioRpeW.children].forEach(x=>x.className="tchip"+(x===c?" on":"")); });
+$("cardioMin").addEventListener("input",e=>CARDIO.min=e.target.value.trim());
+$("cardioHr").addEventListener("input",e=>CARDIO.hr=e.target.value.trim());
+$("cardioNote").addEventListener("input",e=>CARDIO.note=e.target.value);
+$("cardioSave").onclick=()=>{
+  if(!CARDIO.min){ showToast("Add a duration"); return; }
+  db.history.push({id:uid("s"), type:"cardio", flags:[], date:todayISO(),
+    modality:CARDIO.modality, minutes:parseInt(CARDIO.min,10)||0,
+    avgHr:CARDIO.hr?parseInt(CARDIO.hr,10):null, rpe:CARDIO.rpe||null, note:CARDIO.note||""});
+  persist(); renderTrends();
+  CARDIO.min="";CARDIO.hr="";CARDIO.rpe=null;CARDIO.note="";
+  $("cardioMin").value="";$("cardioHr").value="";$("cardioNote").value="";
+  [...cardioRpeW.children].forEach(x=>x.className="tchip");
+  showOther("cardio"); showToast("Cardio banked ✓ — counts toward adherence");
+};
+$("classType").addEventListener("click",e=>{ const c=e.target.closest(".tchip"); if(!c)return;
+  CLASSA.activity=c.dataset.v; [...$("classType").children].forEach(x=>x.className="tchip"+(x===c?" on":"")); });
+$("className").addEventListener("input",e=>CLASSA.name=e.target.value);
+$("classMin").addEventListener("input",e=>CLASSA.min=e.target.value.trim());
+$("classPress").addEventListener("input",e=>CLASSA.press=e.target.value.trim());
+$("classNote").addEventListener("input",e=>CLASSA.note=e.target.value);
+$("classSave").onclick=()=>{
+  if(!CLASSA.min){ showToast("Add a duration"); return; }
+  const est=parseInt(CLASSA.press,10)||0;
+  db.history.push({id:uid("s"), type:"class", flags:[], date:todayISO(),
+    activity:CLASSA.activity, name:CLASSA.name||"", minutes:parseInt(CLASSA.min,10)||0, pressingEst:est, note:CLASSA.note||""});
+  persist(); renderTrain(); renderTrends(); // renderTrain: cap banner picks up the pressing estimate
+  CLASSA.name="";CLASSA.min="";CLASSA.press="";CLASSA.note="";
+  $("className").value="";$("classMin").value="";$("classPress").value="";$("classNote").value="";
+  showOther("class"); showToast(est?`Activity banked ✓ — +${est} pressing to the weekly cap`:"Activity banked ✓ — counts toward adherence");
+};
+
 /* ---------- trends ---------- */
+/* Change 6 — health metrics lead the tab. All deterministic from local data. */
+function rhrSeries(){ return db.telemetry.filter(e=>e.raw && e.raw.rhr!=="" && e.raw.rhr!=null)
+  .map(e=>({date:e.date, v:parseFloat(e.raw.rhr)})).filter(x=>!isNaN(x.v)); }
+function rhrLatest(){ const s=rhrSeries(); if(!s.length) return null;
+  const latest=s[s.length-1].v, prior=s.slice(-4,-1);
+  const avgPrior=prior.length?prior.reduce((a,b)=>a+b.v,0)/prior.length:null;
+  return {latest, delta: avgPrior!=null ? Math.round((latest-avgPrior)*10)/10 : null, n:s.length}; }
+function weeklyZone2(){ return cardioMinutesSince(daysAgoISO(6)); }
+function scheduledCountLast7(){ let c=0; for(let i=0;i<7;i++){ const e=db.schedule[weekdayKey(daysAgoISO(i))]; if(e && e.type!=="open") c++; } return c; }
+function completedCountLast7(){ const since=daysAgoISO(6); return db.history.filter(h=>h.date>=since).length; }
+function renderHealth(){
+  const el=$("healthCards"); if(!el) return;
+  const S=getSettings();
+  const rh=rhrLatest();
+  const rhrCard = rh
+    ? `<div class="hcard"><div class="hc-lbl">Resting HR</div><div class="hc-val">${rh.latest}<span class="hc-u">bpm</span></div>
+        <div class="hc-sub">${rh.delta==null?`${rh.n} logged`:(rh.delta<0?`<span class="good">▼ ${Math.abs(rh.delta)}</span> vs recent`:rh.delta>0?`<span class="warn">▲ ${rh.delta}</span> vs recent`:`flat vs recent`)}</div></div>`
+    : `<div class="hcard"><div class="hc-lbl">Resting HR</div><div class="hc-val">—</div><div class="hc-sub">log RHR in the Log tab</div></div>`;
+  const z=weeklyZone2(), zpct=S.zone2Hi?Math.min(100,Math.round(z/S.zone2Hi*100)):0, zcls=z>=S.zone2Lo?"good":"warn";
+  const zCard=`<div class="hcard"><div class="hc-lbl">Zone 2 this week</div><div class="hc-val">${z}<span class="hc-u">min</span></div>
+     <div class="hc-bar"><span class="${zcls}" style="width:${zpct}%"></span></div><div class="hc-sub">target ${S.zone2Lo}–${S.zone2Hi} min</div></div>`;
+  const p=pressCapState(), ppct=p.cap?Math.min(100,Math.round(p.n/p.cap*100)):0;
+  const pCard=`<div class="hcard"><div class="hc-lbl">Pressing sets</div><div class="hc-val">${p.n}<span class="hc-u">/ ${p.cap}</span></div>
+     <div class="hc-bar"><span class="${p.over?"warn":"good"}" style="width:${ppct}%"></span></div><div class="hc-sub">weekly shoulder cap</div></div>`;
+  const sched=scheduledCountLast7(), done=completedCountLast7(), apct=sched?Math.min(100,Math.round(done/sched*100)):0;
+  const aCard=`<div class="hcard"><div class="hc-lbl">Adherence · 7d</div><div class="hc-val">${done}<span class="hc-u">/ ${sched||0}</span></div>
+     ${sched?`<div class="hc-bar"><span class="good" style="width:${apct}%"></span></div>`:""}<div class="hc-sub">${sched?"sessions done vs scheduled":"nothing scheduled"}</div></div>`;
+  el.innerHTML=`<div class="hcards">${rhrCard}${zCard}${pCard}${aCard}</div>`;
+}
 function epley(w,r){return r>0?Math.round(w*(1+r/30)*10)/10:0;}
 function computePRs(){
   const best={};
-  db.history.forEach(h=>h.exercises.forEach(e=>e.sets.forEach(s=>{
+  db.history.forEach(h=>(h.exercises||[]).forEach(e=>e.sets.forEach(s=>{
     const w=parseFloat(s.wt),r=parseInt(s.rep,10);
     if(!w||!r)return;
     const e1=epley(w,r);
@@ -1069,24 +1560,32 @@ function computePRs(){
   return best;
 }
 function sessionTonnage(h){
-  let t=0; h.exercises.forEach(e=>e.sets.forEach(s=>{
+  let t=0; (h.exercises||[]).forEach(e=>e.sets.forEach(s=>{
     const w=parseFloat(s.wt),r=parseInt(s.rep,10); if(w&&r)t+=w*r;})); return t;
 }
 function renderTrends(){
+  renderHealth();
   const prs=computePRs();
   const names=Object.keys(prs);
   $("prTable").innerHTML="<tr><th>Lift</th><th>e1RM</th><th>Best set</th><th>Date</th></tr>"+
     (names.length?names.map(n=>{const p=prs[n];
       return `<tr><td>${esc(n)}</td><td class="n">${p.e1}</td><td class="n">${p.w}×${p.r}</td><td class="n">${esc(p.date)}</td></tr>`;}).join("")
     :`<tr><td colspan="4" style="color:var(--muted2)">Complete a session and PRs appear here.</td></tr>`);
+  renderCorr();
   const hl=$("histList");
   $("sessCount").textContent=db.history.length+" logged";
   hl.innerHTML=db.history.length?"":"<div class='footnote'>No sessions banked yet.</div>";
   [...db.history].reverse().forEach(h=>{
     const el=document.createElement("div");el.className="hentry";
     const log=historyLogText(h);
-    el.innerHTML=`<div class="top"><span class="d">Day ${esc(h.day)} · ${esc(h.date)}</span>
-      <span style="display:flex;gap:8px;align-items:center"><span class="ton">${sessionTonnage(h).toLocaleString()} lb</span>
+    const nonLift = h.type && h.type!=="lift";
+    const head = h.type==="cardio" ? `Cardio · ${esc(h.modality||"?")} · ${esc(h.date)}`
+      : (h.type==="class"||h.type==="external") ? `${esc(h.activity||"Activity")}${h.name?" · "+esc(h.name):""} · ${esc(h.date)}`
+      : `Day ${esc(h.day)} · ${esc(h.date)}`;
+    const right = nonLift ? (h.minutes?`<span class="ton">${esc(h.minutes)} min</span>`:"")
+      : `<span class="ton">${sessionTonnage(h).toLocaleString()} lb</span>`;
+    el.innerHTML=`<div class="top"><span class="d">${head}${sessionFlagBadge(h)}</span>
+      <span style="display:flex;gap:8px;align-items:center">${right}
       <button class="cp">copy</button></span></div>
       <div class="lines">${esc(log.split("\n").slice(1).join("\n"))}</div>`;
     el.querySelector(".cp").onclick=()=>copyText(log,"Session log copied ✓");
@@ -1102,8 +1601,19 @@ function renderTrends(){
   });
 }
 function historyLogText(h){
+  if(h.type==="cardio"){
+    const bits=[`${h.minutes||"?"} min`];
+    if(h.avgHr) bits.push(`avg HR ${h.avgHr}`);
+    if(h.rpe) bits.push(`RPE ${h.rpe}`);
+    return `Cardio · ${h.modality||"?"} — ${h.date}\n${bits.join(" · ")}${h.note?` — ${h.note}`:""}`;
+  }
+  if(h.type==="class"||h.type==="external"){
+    const bits=[`${h.minutes||"?"} min`];
+    if(h.pressingEst) bits.push(`${h.pressingEst} pressing`);
+    return `${h.activity||"Activity"}${h.name?`: ${h.name}`:""} — ${h.date}\n${bits.join(" · ")}${h.note?` — ${h.note}`:""}`;
+  }
   const lines=[`Full Body ${h.day} — ${h.date}`];
-  h.exercises.forEach(e=>{
+  (h.exercises||[]).forEach(e=>{
     const timed=isTimeName(e.name);
     const reps=e.sets.map(x=>x.rep).filter(v=>v!=="");
     const wts=e.sets.map(x=>x.wt).filter(v=>v!=="");
@@ -1141,7 +1651,7 @@ $("vFile").addEventListener("change",e=>{
       if(!confirm(`Restore backup from ${d.exported||"unknown date"}? This replaces current data (${db.history.length} sessions).`)) return;
       db=migrate({app:APP,schema:SCHEMA,created:d.created||todayISO(),program:d.program||db.program,
           history:d.history,telemetry:d.telemetry,sessions:d.sessions,session:d.session});
-      persist(); curDay=["A","B","C"].find(x=>db.sessions[x])||"A"; rebuildProgram();
+      persist(); curDay=["A","B","C"].find(x=>db.sessions[x])||defaultDayForToday(); rebuildProgram();
       renderTrain(); renderTrends(); showToast("Backup restored ✓");
     }catch(err){ showToast("That file isn't a valid Q Branch backup"); }
     e.target.value="";
@@ -1151,7 +1661,7 @@ $("vFile").addEventListener("change",e=>{
 const csvCell=v=>{v=String(v==null?"":v).replace(/"/g,'""');return /[",\n]/.test(v)?`"${v}"`:v;};
 $("vCsvW").onclick=()=>{
   const rows=[["Date","Day","Exercise","Set","Reps","Weight (lb)","RPE","Volume","e1RM"]];
-  db.history.forEach(h=>h.exercises.forEach(e=>e.sets.forEach((s,i)=>{
+  db.history.forEach(h=>(h.exercises||[]).forEach(e=>e.sets.forEach((s,i)=>{
     if(s.rep==="")return;
     const w=parseFloat(s.wt)||"",r=parseInt(s.rep,10)||"";
     rows.push([h.date,h.day,e.name,i+1,s.rep,s.wt,s.rpe,(w&&r)?w*r:"",(w&&r)?epley(w,r):""]);
@@ -1212,9 +1722,9 @@ document.addEventListener("keydown",e=>{
 });
 
 /* ---------- boot ---------- */
-renderTrain(); renderTele(); renderTrends(); renderVaultStat();
+renderTrain(); renderTele(); renderTrends(); renderVaultStat(); renderSoreRecent(); renderSchedule();
 // make the telemetry tap-chips keyboard-operable (clicks bubble to their group handler)
-document.querySelectorAll("#pg-log .tchip").forEach(c=>{ c.setAttribute("role","button"); c.tabIndex=0; });
+document.querySelectorAll("#pg-log .tchip, #pg-train .tchip").forEach(c=>{ c.setAttribute("role","button"); c.tabIndex=0; });
 /* offline shell: cache-first service worker (no-ops on file:// or unsupported) */
 try{
   if("serviceWorker" in navigator && location.protocol.startsWith("http")){
