@@ -106,6 +106,7 @@
   .schedrow .sd-wk{font-weight:800;width:38px;color:var(--muted)}
   .schedrow .sd-lbl{font-weight:700}
   .schedrow .sd-tap{margin-left:auto;font-size:11px;color:var(--muted2)}
+  .chip.recal{background:rgba(95,179,196,.16);color:var(--cyan);font-weight:800;letter-spacing:.3px}
 
   .note{margin:12px 18px 0;background:var(--surface);border:1px solid var(--line);border-radius:12px;
     padding:10px 13px;font-size:12.5px;line-height:1.5;color:var(--muted);display:flex;gap:9px;align-items:flex-start}
@@ -793,6 +794,7 @@ function rebuildProgram(){ PROGRAM = blockProgram(db.program.i); }
    window (not calendar). Counts banked sets + live in-progress sets + any
    class/external pressing estimate. Cap + window live in db.settings (editable).*/
 function daysAgoISO(n){ const d=new Date(todayISO()+"T00:00:00"); d.setDate(d.getDate()-n); return d.toLocaleDateString("en-CA"); }
+function daysSince(iso){ const a=new Date(todayISO()+"T00:00:00"), b=new Date((iso||todayISO())+"T00:00:00"); return Math.round((a-b)/86400000); }
 function pressingSetsBanked(sinceISO){
   let n=0;
   db.history.forEach(h=>{
@@ -962,6 +964,11 @@ function prescribe(def){
   }
   const perfs=lastPerfs(def.name,2);
   if(!perfs.length) return {wt:null, fresh:true, why:"🆕 No history — calibrate with 3–4 reps in the tank."};
+  // Change 7 — stale load: don't prefill a number the body may have moved past.
+  const ageDays=daysSince(perfs[0].date);
+  if(ageDays > (getSettings().staleDays||21))
+    return {wt:null, fresh:true, recalibrate:true, ageDays,
+      why:`<b>RECALIBRATE</b> — last logged ${ageDays} days ago. Pick a load at RPE 6–7 (3–4 reps in reserve); that becomes the new baseline, then double-progression resumes.`};
   const st=perfStats(perfs[0].e);
   if(!st) return {wt:null, fresh:true, why:"🆕 No logged sets yet — calibrate."};
   const wt=st.wt, maxRPE=st.maxRPE, prev=perfs[1]?perfStats(perfs[1].e):null;
@@ -1186,7 +1193,7 @@ function renderTrain(){
           <div class="ename">${esc(eff.name)}${swapped?`<span class="chip swap">⇄ swapped</span>`:(def.rotated?`<span class="new blk">🔄 new this block</span>`:"")}</div>
           <div class="esub"><span>${setword}</span><span class="chip">${esc(def.tag)}</span>
             ${def.rpe!=="—"?`<span class="chip rpe">RPE ${def.rpe}</span>`:""}
-            ${rx.fresh?`<span class="new">🆕</span>`:(rx.wt!=null?`<span class="chip rx">▶ ${rx.wt} lb</span>`:"")}
+            ${rx.recalibrate?`<span class="chip recal">↻ RECALIBRATE</span>`:(rx.fresh?`<span class="new">🆕</span>`:(rx.wt!=null?`<span class="chip rx">▶ ${rx.wt} lb</span>`:""))}
           </div>
         </div><span class="chev">▶</span>
       </div>
