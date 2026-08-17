@@ -86,6 +86,14 @@
   .corr-note{font-size:11.5px;color:var(--muted);line-height:1.5;margin:8px 2px 0}
   .sore-item{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;padding:8px 0;border-top:1px solid var(--line)}
   .sore-item .x{background:none;border:none;color:var(--muted2);cursor:pointer;font-size:15px;padding:0 4px}
+  .otherrow{display:flex;gap:8px;margin:0 18px}
+  .olbtn{flex:1;background:var(--surface);border:1px solid var(--line);color:var(--text);border-radius:12px;padding:12px 0;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
+  .olbtn.on{border-color:var(--cyan);color:var(--cyan);background:rgba(95,179,196,.08)}
+  .olform{margin:10px 18px 0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px}
+  .olform .f.full{margin-top:10px}
+  .olnote{font-size:11.5px;color:var(--warn);line-height:1.5;margin:8px 2px 0}
+  .zone2{font-size:11.5px;color:var(--cyan);line-height:1.5;margin:8px 2px 2px;font-weight:600}
+  .tchip.disabled{opacity:.45;text-decoration:line-through;cursor:not-allowed}
 
   .note{margin:12px 18px 0;background:var(--surface);border:1px solid var(--line);border-radius:12px;
     padding:10px 13px;font-size:12.5px;line-height:1.5;color:var(--muted);display:flex;gap:9px;align-items:flex-start}
@@ -283,6 +291,47 @@
   </div>
   <div class="footnote">🆕 = no history — pick a load with 3–4 reps in the tank; that becomes baseline.<br>
     Prefilled weights come from your last log with §8 double-progression already applied. Data wins over plan.</div>
+
+  <div class="sect"><h2>Other session</h2><span class="meta">cardio · class · activity</span></div>
+  <div class="otherrow">
+    <button class="olbtn" id="logCardioBtn" type="button">＋ Cardio</button>
+    <button class="olbtn" id="logClassBtn" type="button">＋ Class / activity</button>
+  </div>
+
+  <div class="olform" id="cardioForm" style="display:none">
+    <div class="sorelbl">Modality</div>
+    <div class="chips" id="cardioMode">
+      <div class="tchip on" data-v="stationary bike">bike</div>
+      <div class="tchip" data-v="elliptical">elliptical</div>
+      <div class="tchip" data-v="incline walk">incline walk</div>
+      <div class="tchip" data-v="other">other</div>
+      <div class="tchip disabled" data-v="running" aria-disabled="true">running 🚫</div>
+    </div>
+    <div class="olnote">🚫 Running is held pending your knee evaluation and the Broström ankle — low-impact only for now.</div>
+    <div class="zone2">Zone 2 = conversational pace: full sentences, can’t comfortably sing.</div>
+    <label class="f full"><span>Duration (min)</span><input type="number" id="cardioMin" inputmode="numeric" placeholder="25"></label>
+    <label class="f full"><span>Average HR <span style="color:var(--muted2)">(optional)</span></span><input type="number" id="cardioHr" inputmode="numeric" placeholder="bpm"></label>
+    <div class="sorelbl">Session RPE</div>
+    <div class="chips" id="cardioRpe"></div>
+    <label class="f full" style="margin-top:10px"><span>Notes</span><input type="text" id="cardioNote" placeholder="how it felt"></label>
+    <button class="cta" id="cardioSave" style="width:100%;margin-top:12px">Log cardio session</button>
+  </div>
+
+  <div class="olform" id="classForm" style="display:none">
+    <div class="sorelbl">Type</div>
+    <div class="chips" id="classType">
+      <div class="tchip on" data-v="class">class</div>
+      <div class="tchip" data-v="walk">walk</div>
+      <div class="tchip" data-v="GPP">GPP</div>
+      <div class="tchip" data-v="other">other</div>
+    </div>
+    <label class="f full" style="margin-top:10px"><span>Name</span><input type="text" id="className" placeholder="e.g. BJJ, yoga, hike"></label>
+    <label class="f full"><span>Duration (min)</span><input type="number" id="classMin" inputmode="numeric" placeholder="60"></label>
+    <label class="f full"><span>Pressing-sets estimate</span><input type="number" id="classPress" inputmode="numeric" placeholder="0"></label>
+    <div class="olnote">Rough count of hard pressing efforts — this feeds the weekly shoulder cap.</div>
+    <label class="f full" style="margin-top:10px"><span>Notes</span><input type="text" id="classNote" placeholder="optional"></label>
+    <button class="cta" id="classSave" style="width:100%;margin-top:12px">Log activity</button>
+  </div>
 </div>
 
 <!-- ============ TELEMETRY ============ -->
@@ -1331,11 +1380,66 @@ $("soreSave").onclick=()=>{
   showToast(n ? `Flagged — linked to ${n} session${n===1?"":"s"} in the prior 72 h` : "Flagged — no sessions in the prior 72 h to link");
 };
 
+/* ---------- other-session logging: cardio + class/external (Changes 2 & 5) ----
+   Cardio and classes are first-class banked sessions (type on the history entry)
+   that count toward adherence like lifts, but do NOT advance the lifting block.
+   Cardio minutes feed the Zone-2 target; a class's pressing estimate feeds the
+   shoulder cap. Running is offered but disabled (knee eval + Broström ankle). */
+function cardioMinutesSince(sinceISO){ let m=0; db.history.forEach(h=>{ if(h.type==="cardio" && h.date>=sinceISO) m+=(parseInt(h.minutes,10)||0); }); return m; }
+const CARDIO={modality:"stationary bike", min:"", hr:"", rpe:null, note:""};
+const CLASSA={activity:"class", name:"", min:"", press:"", note:""};
+function showOther(which){
+  const cf=$("cardioForm"), xf=$("classForm"), cb=$("logCardioBtn"), xb=$("logClassBtn");
+  const openC = which==="cardio" && cf.style.display==="none";
+  const openX = which==="class"  && xf.style.display==="none";
+  cf.style.display=openC?"block":"none"; xf.style.display=openX?"block":"none";
+  cb.classList.toggle("on",openC); xb.classList.toggle("on",openX);
+}
+$("logCardioBtn").onclick=()=>showOther("cardio");
+$("logClassBtn").onclick=()=>showOther("class");
+$("cardioMode").addEventListener("click",e=>{ const c=e.target.closest(".tchip"); if(!c)return;
+  if(c.classList.contains("disabled")){ showToast("Running is on hold — knee eval + Broström ankle. Low-impact only."); return; }
+  CARDIO.modality=c.dataset.v; [...$("cardioMode").children].forEach(x=>x.className="tchip"+(x.dataset.v==="running"?" disabled":"")+(x===c?" on":"")); });
+const cardioRpeW=$("cardioRpe");
+for(let i=1;i<=10;i++){ const c=document.createElement("div"); c.className="tchip"; c.textContent=i; c.dataset.v=i; c.setAttribute("role","button"); c.tabIndex=0; cardioRpeW.appendChild(c); }
+cardioRpeW.addEventListener("click",e=>{ const c=e.target.closest(".tchip"); if(!c)return;
+  CARDIO.rpe=+c.dataset.v; [...cardioRpeW.children].forEach(x=>x.className="tchip"+(x===c?" on":"")); });
+$("cardioMin").addEventListener("input",e=>CARDIO.min=e.target.value.trim());
+$("cardioHr").addEventListener("input",e=>CARDIO.hr=e.target.value.trim());
+$("cardioNote").addEventListener("input",e=>CARDIO.note=e.target.value);
+$("cardioSave").onclick=()=>{
+  if(!CARDIO.min){ showToast("Add a duration"); return; }
+  db.history.push({id:uid("s"), type:"cardio", flags:[], date:todayISO(),
+    modality:CARDIO.modality, minutes:parseInt(CARDIO.min,10)||0,
+    avgHr:CARDIO.hr?parseInt(CARDIO.hr,10):null, rpe:CARDIO.rpe||null, note:CARDIO.note||""});
+  persist(); renderTrends();
+  CARDIO.min="";CARDIO.hr="";CARDIO.rpe=null;CARDIO.note="";
+  $("cardioMin").value="";$("cardioHr").value="";$("cardioNote").value="";
+  [...cardioRpeW.children].forEach(x=>x.className="tchip");
+  showOther("cardio"); showToast("Cardio banked ✓ — counts toward adherence");
+};
+$("classType").addEventListener("click",e=>{ const c=e.target.closest(".tchip"); if(!c)return;
+  CLASSA.activity=c.dataset.v; [...$("classType").children].forEach(x=>x.className="tchip"+(x===c?" on":"")); });
+$("className").addEventListener("input",e=>CLASSA.name=e.target.value);
+$("classMin").addEventListener("input",e=>CLASSA.min=e.target.value.trim());
+$("classPress").addEventListener("input",e=>CLASSA.press=e.target.value.trim());
+$("classNote").addEventListener("input",e=>CLASSA.note=e.target.value);
+$("classSave").onclick=()=>{
+  if(!CLASSA.min){ showToast("Add a duration"); return; }
+  const est=parseInt(CLASSA.press,10)||0;
+  db.history.push({id:uid("s"), type:"class", flags:[], date:todayISO(),
+    activity:CLASSA.activity, name:CLASSA.name||"", minutes:parseInt(CLASSA.min,10)||0, pressingEst:est, note:CLASSA.note||""});
+  persist(); renderTrain(); renderTrends(); // renderTrain: cap banner picks up the pressing estimate
+  CLASSA.name="";CLASSA.min="";CLASSA.press="";CLASSA.note="";
+  $("className").value="";$("classMin").value="";$("classPress").value="";$("classNote").value="";
+  showOther("class"); showToast(est?`Activity banked ✓ — +${est} pressing to the weekly cap`:"Activity banked ✓ — counts toward adherence");
+};
+
 /* ---------- trends ---------- */
 function epley(w,r){return r>0?Math.round(w*(1+r/30)*10)/10:0;}
 function computePRs(){
   const best={};
-  db.history.forEach(h=>h.exercises.forEach(e=>e.sets.forEach(s=>{
+  db.history.forEach(h=>(h.exercises||[]).forEach(e=>e.sets.forEach(s=>{
     const w=parseFloat(s.wt),r=parseInt(s.rep,10);
     if(!w||!r)return;
     const e1=epley(w,r);
@@ -1344,7 +1448,7 @@ function computePRs(){
   return best;
 }
 function sessionTonnage(h){
-  let t=0; h.exercises.forEach(e=>e.sets.forEach(s=>{
+  let t=0; (h.exercises||[]).forEach(e=>e.sets.forEach(s=>{
     const w=parseFloat(s.wt),r=parseInt(s.rep,10); if(w&&r)t+=w*r;})); return t;
 }
 function renderTrends(){
@@ -1361,8 +1465,14 @@ function renderTrends(){
   [...db.history].reverse().forEach(h=>{
     const el=document.createElement("div");el.className="hentry";
     const log=historyLogText(h);
-    el.innerHTML=`<div class="top"><span class="d">Day ${esc(h.day)} · ${esc(h.date)}${sessionFlagBadge(h)}</span>
-      <span style="display:flex;gap:8px;align-items:center"><span class="ton">${sessionTonnage(h).toLocaleString()} lb</span>
+    const nonLift = h.type && h.type!=="lift";
+    const head = h.type==="cardio" ? `Cardio · ${esc(h.modality||"?")} · ${esc(h.date)}`
+      : (h.type==="class"||h.type==="external") ? `${esc(h.activity||"Activity")}${h.name?" · "+esc(h.name):""} · ${esc(h.date)}`
+      : `Day ${esc(h.day)} · ${esc(h.date)}`;
+    const right = nonLift ? (h.minutes?`<span class="ton">${esc(h.minutes)} min</span>`:"")
+      : `<span class="ton">${sessionTonnage(h).toLocaleString()} lb</span>`;
+    el.innerHTML=`<div class="top"><span class="d">${head}${sessionFlagBadge(h)}</span>
+      <span style="display:flex;gap:8px;align-items:center">${right}
       <button class="cp">copy</button></span></div>
       <div class="lines">${esc(log.split("\n").slice(1).join("\n"))}</div>`;
     el.querySelector(".cp").onclick=()=>copyText(log,"Session log copied ✓");
@@ -1378,8 +1488,19 @@ function renderTrends(){
   });
 }
 function historyLogText(h){
+  if(h.type==="cardio"){
+    const bits=[`${h.minutes||"?"} min`];
+    if(h.avgHr) bits.push(`avg HR ${h.avgHr}`);
+    if(h.rpe) bits.push(`RPE ${h.rpe}`);
+    return `Cardio · ${h.modality||"?"} — ${h.date}\n${bits.join(" · ")}${h.note?` — ${h.note}`:""}`;
+  }
+  if(h.type==="class"||h.type==="external"){
+    const bits=[`${h.minutes||"?"} min`];
+    if(h.pressingEst) bits.push(`${h.pressingEst} pressing`);
+    return `${h.activity||"Activity"}${h.name?`: ${h.name}`:""} — ${h.date}\n${bits.join(" · ")}${h.note?` — ${h.note}`:""}`;
+  }
   const lines=[`Full Body ${h.day} — ${h.date}`];
-  h.exercises.forEach(e=>{
+  (h.exercises||[]).forEach(e=>{
     const timed=isTimeName(e.name);
     const reps=e.sets.map(x=>x.rep).filter(v=>v!=="");
     const wts=e.sets.map(x=>x.wt).filter(v=>v!=="");
@@ -1427,7 +1548,7 @@ $("vFile").addEventListener("change",e=>{
 const csvCell=v=>{v=String(v==null?"":v).replace(/"/g,'""');return /[",\n]/.test(v)?`"${v}"`:v;};
 $("vCsvW").onclick=()=>{
   const rows=[["Date","Day","Exercise","Set","Reps","Weight (lb)","RPE","Volume","e1RM"]];
-  db.history.forEach(h=>h.exercises.forEach(e=>e.sets.forEach((s,i)=>{
+  db.history.forEach(h=>(h.exercises||[]).forEach(e=>e.sets.forEach((s,i)=>{
     if(s.rep==="")return;
     const w=parseFloat(s.wt)||"",r=parseInt(s.rep,10)||"";
     rows.push([h.date,h.day,e.name,i+1,s.rep,s.wt,s.rpe,(w&&r)?w*r:"",(w&&r)?epley(w,r):""]);
@@ -1490,7 +1611,7 @@ document.addEventListener("keydown",e=>{
 /* ---------- boot ---------- */
 renderTrain(); renderTele(); renderTrends(); renderVaultStat(); renderSoreRecent();
 // make the telemetry tap-chips keyboard-operable (clicks bubble to their group handler)
-document.querySelectorAll("#pg-log .tchip").forEach(c=>{ c.setAttribute("role","button"); c.tabIndex=0; });
+document.querySelectorAll("#pg-log .tchip, #pg-train .tchip").forEach(c=>{ c.setAttribute("role","button"); c.tabIndex=0; });
 /* offline shell: cache-first service worker (no-ops on file:// or unsupported) */
 try{
   if("serviceWorker" in navigator && location.protocol.startsWith("http")){
