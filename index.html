@@ -77,6 +77,15 @@
   .card.locked .sets{filter:grayscale(.3)}
   .presshint{display:none;margin-top:8px;font-size:11.5px;font-weight:700;color:#e8776f;background:rgba(200,50,60,.10);border-radius:8px;padding:7px 9px}
   .card.locked .presshint{display:block}
+  .sorelbl{font-size:12px;color:var(--muted);font-weight:700;margin:12px 0 6px}
+  .tchip.warn{border-color:var(--warn);color:var(--warn)}
+  .flagbadge{font-size:10px;font-weight:800;border-radius:6px;padding:2px 7px;background:rgba(200,50,60,.14);color:#e8776f;white-space:nowrap}
+  .corr-tbl{width:100%;border-collapse:collapse;font-size:13px}
+  .corr-tbl th,.corr-tbl td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}
+  .corr-tbl td.n,.corr-tbl th.n{text-align:right;font-family:var(--mono)}
+  .corr-note{font-size:11.5px;color:var(--muted);line-height:1.5;margin:8px 2px 0}
+  .sore-item{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;padding:8px 0;border-top:1px solid var(--line)}
+  .sore-item .x{background:none;border:none;color:var(--muted2);cursor:pointer;font-size:15px;padding:0 4px}
 
   .note{margin:12px 18px 0;background:var(--surface);border:1px solid var(--line);border-radius:12px;
     padding:10px 13px;font-size:12.5px;line-height:1.5;color:var(--muted);display:flex;gap:9px;align-items:flex-start}
@@ -325,6 +334,25 @@
     <button class="cta" id="tSave">Save entry</button>
   </div>
   <div class="footnote">One line a day keeps the coach informed. Paste the string to Claude at your weekly check-in.</div>
+
+  <div class="tcard" id="soreCard">
+    <div class="tlbl"><span class="name">Soreness flag</span><span class="unit">retroactive · auto-links the prior 72 h</span></div>
+    <div class="sorelbl">Joint</div>
+    <div class="chips" id="soreJoint">
+      <div class="tchip" data-v="shoulder">shoulder</div>
+      <div class="tchip" data-v="knee">knee</div>
+      <div class="tchip" data-v="ankle">ankle</div>
+      <div class="tchip" data-v="back">back</div>
+      <div class="tchip" data-v="other">other</div>
+    </div>
+    <div class="sorelbl">Severity <span class="unit">1 = niggle · 5 = can't train it</span></div>
+    <div class="chips" id="soreSev"></div>
+    <label class="f full" style="margin-top:12px"><span>Date noticed</span><input type="date" id="soreDate"></label>
+    <label class="f full" style="margin-top:10px"><span>Note (optional)</span><input type="text" id="soreNote" placeholder="e.g. front delt ached overnight"></label>
+    <button class="cta" id="soreSave" style="margin-top:12px;width:100%">Flag soreness</button>
+    <div id="soreRecent"></div>
+    <div class="footnote" style="margin-top:10px">The shoulder's payback is delayed — log it whenever you notice it, even days later. It links back to the sessions that likely caused it.</div>
+  </div>
 </div>
 
 <!-- ============ TRENDS ============ -->
@@ -332,6 +360,8 @@
   <div class="sect"><h2>Personal records</h2><span class="meta" style="color:var(--amber);font-family:var(--mono);font-size:11px">EPLEY e1RM</span></div>
   <div class="tblcard"><table id="prTable"></table></div>
   <div class="footnote" style="margin-top:8px">Epley inflates above ~10–12 reps — trust it most on sets under 10.</div>
+  <div class="sect"><h2>Shoulder-flag correlation</h2><span class="meta" style="color:var(--muted2);font-family:var(--mono);font-size:11px">72 H WINDOW</span></div>
+  <div id="soreCorr"></div>
   <div class="sect"><h2>Sessions</h2><span class="meta" id="sessCount"></span></div>
   <div id="histList"></div>
   <div class="sect"><h2>Telemetry log</h2><span class="meta" id="teleCount"></span></div>
@@ -721,6 +751,69 @@ function twoCleanShoulderWeeks(){
   const since=daysAgoISO(13), cap=getSettings().pressingCapPerWeek|0;
   const flagged=(db.sorenessFlags||[]).some(f=>f.joint==="shoulder" && f.date>=since);
   return !flagged && pressingSetsBanked(since) >= cap;
+}
+
+/* ---------- delayed soreness flags (Change 4) — connect payback to cause -------
+   The app previously had no way to link "Saturday's session" to "Monday's
+   shoulder." A flag is retroactive; on submit it attributes to every banked
+   session inside the trailing soreness window (72 h, editable) and links both
+   ways (flag.sessions[] ↔ session.flags[]). */
+function addDaysISO(iso,n){ const d=new Date(iso+"T00:00:00"); d.setDate(d.getDate()+n); return d.toLocaleDateString("en-CA"); }
+function attributeSoreness(flag){
+  const days=Math.ceil((getSettings().sorenessWindowHours||72)/24);
+  const lo=addDaysISO(flag.date,-days);
+  flag.sessions=[];
+  db.history.forEach(h=>{
+    if(h.date>=lo && h.date<=flag.date){
+      flag.sessions.push(h.id);
+      if(!Array.isArray(h.flags)) h.flags=[];
+      if(!h.flags.includes(flag.id)) h.flags.push(flag.id);
+    }
+  });
+  return flag.sessions.length;
+}
+function removeSoreness(id){
+  db.history.forEach(h=>{ if(Array.isArray(h.flags)) h.flags=h.flags.filter(x=>x!==id); });
+  db.sorenessFlags=(db.sorenessFlags||[]).filter(x=>x.id!==id);
+  persist(); renderTrends(); renderSoreRecent();
+}
+function flagsForSession(h){ const byId={}; (db.sorenessFlags||[]).forEach(f=>byId[f.id]=f);
+  return (h.flags||[]).map(id=>byId[id]).filter(Boolean); }
+function sessionFlagBadge(h){
+  const fs=flagsForSession(h); if(!fs.length) return "";
+  const byJoint={}; fs.forEach(f=>{ byJoint[f.joint]=Math.max(byJoint[f.joint]||0, f.severity||0); });
+  return " "+Object.keys(byJoint).map(j=>`<span class="flagbadge">⚠ ${esc(j)} ${byJoint[j]}</span>`).join(" ");
+}
+/* Honest correlation: pressing volume per session vs. whether a shoulder flag
+   was noticed within 72 h after. Raw counts + rates; no rate for thin buckets. */
+function shoulderCorrelation(){
+  const lifts=db.history.filter(h=>h.type==="lift" || h.exercises);
+  const shId=new Set((db.sorenessFlags||[]).filter(f=>f.joint==="shoulder").map(f=>f.id));
+  const rows=lifts.map(h=>{ let p=0; (h.exercises||[]).forEach(e=>{ if(isPressingName(e.name)) p+=e.sets.filter(s=>s.rep!=="").length; });
+    return {press:p, flagged:(h.flags||[]).some(id=>shId.has(id))}; });
+  const buckets=[["0",0,0],["1–3",1,3],["4–6",4,6],["7+",7,Infinity]];
+  const data=buckets.map(([lbl,lo,hi])=>{ const inB=rows.filter(r=>r.press>=lo&&r.press<=hi);
+    return {lbl, n:inB.length, k:inB.filter(r=>r.flagged).length}; });
+  return {data, totalSessions:rows.length, totalShoulderFlags:shId.size};
+}
+function renderCorr(){
+  const el=$("soreCorr"); if(!el) return;
+  const {data,totalSessions,totalShoulderFlags}=shoulderCorrelation();
+  const small = totalShoulderFlags<3 || totalSessions<8;
+  const body=data.map(d=>`<tr><td>${d.lbl}</td><td class="n">${d.n}</td><td class="n">${d.k}</td><td class="n">${d.n>=3?Math.round(d.k/d.n*100)+"%":"—"}</td></tr>`).join("");
+  el.innerHTML=`<div class="tblcard"><table class="corr-tbl">
+      <tr><th>Pressing sets / session</th><th class="n">sessions</th><th class="n">→ shoulder</th><th class="n">rate</th></tr>
+      ${body}</table></div>
+    <div class="corr-note">${ small
+      ? `Not enough to read into yet — ${totalShoulderFlags} shoulder flag${totalShoulderFlags===1?"":"s"} across ${totalSessions} session${totalSessions===1?"":"s"}. Rates show only for buckets with ≥3 sessions.`
+      : `A session counts as "→ shoulder" when a shoulder flag was noticed within 72 h after it. Raw rates — a signal to weigh, not proof.` }</div>`;
+}
+function renderSoreRecent(){
+  const el=$("soreRecent"); if(!el) return;
+  const fs=[...(db.sorenessFlags||[])].sort((a,b)=>a.date<b.date?1:-1).slice(0,6);
+  el.innerHTML = fs.length ? `<div class="sorelbl">Recent flags</div>`+fs.map(f=>
+     `<div class="sore-item"><span>⚠ <b>${esc(f.joint)}</b> ${f.severity}/5 · ${esc(f.date)} · ${f.sessions.length} session${f.sessions.length===1?"":"s"}</span><button class="x" data-id="${esc(f.id)}" title="remove flag">✕</button></div>`).join("") : "";
+  el.querySelectorAll(".x").forEach(b=>b.onclick=()=>removeSoreness(b.dataset.id));
 }
 
 function flashSaved(){ const el=$("saveInd"); if(!el)return;
@@ -1213,6 +1306,31 @@ $("tSave").onclick=()=>{
   persist(); renderTrends(); showToast(i>=0?"Updated ✓":"Logged ✓");
 };
 
+/* ---------- soreness flag wiring (Change 4) ---------- */
+const SORE={joint:null, sev:null, date:todayISO(), note:""};
+$("soreDate").value=SORE.date;
+$("soreDate").addEventListener("change",e=>{ SORE.date=e.target.value; });
+$("soreJoint").addEventListener("click",e=>{ const c=e.target.closest(".tchip"); if(!c)return;
+  SORE.joint=c.dataset.v; [...$("soreJoint").children].forEach(x=>x.className="tchip"+(x===c?" on":"")); });
+const soreSevW=$("soreSev");
+for(let i=1;i<=5;i++){ const c=document.createElement("div"); c.className="tchip"; c.textContent=i; c.dataset.v=i; c.setAttribute("role","button"); c.tabIndex=0; soreSevW.appendChild(c); }
+soreSevW.addEventListener("click",e=>{ const c=e.target.closest(".tchip"); if(!c)return;
+  SORE.sev=+c.dataset.v; [...soreSevW.children].forEach(x=>x.className="tchip"+(x===c?" on"+(SORE.sev>=4?" warn":""):"")); });
+$("soreNote").addEventListener("input",e=>{ SORE.note=e.target.value; });
+$("soreSave").onclick=()=>{
+  if(!SORE.joint){ showToast("Pick a joint"); return; }
+  if(!SORE.sev){ showToast("Pick a severity 1–5"); return; }
+  const flag={id:uid("f"), joint:SORE.joint, severity:SORE.sev, date:SORE.date||todayISO(), note:SORE.note||"", ts:new Date().toISOString(), sessions:[]};
+  const n=attributeSoreness(flag);
+  db.sorenessFlags.push(flag);
+  persist(); renderTrends(); renderSoreRecent();
+  SORE.joint=null; SORE.sev=null; SORE.note="";
+  [...$("soreJoint").children].forEach(x=>x.className="tchip");
+  [...soreSevW.children].forEach(x=>x.className="tchip");
+  $("soreNote").value="";
+  showToast(n ? `Flagged — linked to ${n} session${n===1?"":"s"} in the prior 72 h` : "Flagged — no sessions in the prior 72 h to link");
+};
+
 /* ---------- trends ---------- */
 function epley(w,r){return r>0?Math.round(w*(1+r/30)*10)/10:0;}
 function computePRs(){
@@ -1236,13 +1354,14 @@ function renderTrends(){
     (names.length?names.map(n=>{const p=prs[n];
       return `<tr><td>${esc(n)}</td><td class="n">${p.e1}</td><td class="n">${p.w}×${p.r}</td><td class="n">${esc(p.date)}</td></tr>`;}).join("")
     :`<tr><td colspan="4" style="color:var(--muted2)">Complete a session and PRs appear here.</td></tr>`);
+  renderCorr();
   const hl=$("histList");
   $("sessCount").textContent=db.history.length+" logged";
   hl.innerHTML=db.history.length?"":"<div class='footnote'>No sessions banked yet.</div>";
   [...db.history].reverse().forEach(h=>{
     const el=document.createElement("div");el.className="hentry";
     const log=historyLogText(h);
-    el.innerHTML=`<div class="top"><span class="d">Day ${esc(h.day)} · ${esc(h.date)}</span>
+    el.innerHTML=`<div class="top"><span class="d">Day ${esc(h.day)} · ${esc(h.date)}${sessionFlagBadge(h)}</span>
       <span style="display:flex;gap:8px;align-items:center"><span class="ton">${sessionTonnage(h).toLocaleString()} lb</span>
       <button class="cp">copy</button></span></div>
       <div class="lines">${esc(log.split("\n").slice(1).join("\n"))}</div>`;
@@ -1369,7 +1488,7 @@ document.addEventListener("keydown",e=>{
 });
 
 /* ---------- boot ---------- */
-renderTrain(); renderTele(); renderTrends(); renderVaultStat();
+renderTrain(); renderTele(); renderTrends(); renderVaultStat(); renderSoreRecent();
 // make the telemetry tap-chips keyboard-operable (clicks bubble to their group handler)
 document.querySelectorAll("#pg-log .tchip").forEach(c=>{ c.setAttribute("role","button"); c.tabIndex=0; });
 /* offline shell: cache-first service worker (no-ops on file:// or unsupported) */
