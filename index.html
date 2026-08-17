@@ -332,7 +332,7 @@
       <div class="tchip disabled" data-v="running" aria-disabled="true">running 🚫</div>
     </div>
     <div class="olnote">🚫 Running is held pending your knee evaluation and the Broström ankle — low-impact only for now.</div>
-    <div class="zone2">Zone 2 = conversational pace: full sentences, can’t comfortably sing.</div>
+    <div class="zone2" id="zone2Hint"></div>
     <label class="f full"><span>Duration (min)</span><input type="number" id="cardioMin" inputmode="numeric" placeholder="25"></label>
     <label class="f full"><span>Average HR <span style="color:var(--muted2)">(optional)</span></span><input type="number" id="cardioHr" inputmode="numeric" placeholder="bpm"></label>
     <div class="sorelbl">Session RPE</div>
@@ -680,6 +680,7 @@ const DEFAULT_SETTINGS = {
   staleDays: 21,              // Change 7 — prefill goes RECALIBRATE past this age
   sorenessWindowHours: 72,    // Change 4 — retroactive attribution window
   zone2Lo: 50, zone2Hi: 75,   // Change 6 — weekly Zone-2 minutes target band
+  zone2HrLo: 108, zone2HrHi: 126, // Zone-2 HR band — 60–70% of est. max HR (Tanaka, age 39). Estimate: the talk test wins.
 };
 /* Weekday → session. type:"lift" carries a day A/B/C; "cardio" a label;
    "open" is unscheduled. Stored as data so the user can override any day. */
@@ -1264,7 +1265,7 @@ function renderTrain(){
     });
   });
   $("setmeta").textContent = defs.reduce((a,d)=>a+d.sets,0)+" sets";
-  renderTodaySched(); renderPressCap(); updatePressGate();
+  renderTodaySched(); renderZone2Hint(); renderPressCap(); updatePressGate();
   persist();
 }
 
@@ -1468,6 +1469,16 @@ $("soreSave").onclick=()=>{
    that count toward adherence like lifts, but do NOT advance the lifting block.
    Cardio minutes feed the Zone-2 target; a class's pressing estimate feeds the
    shoulder cap. Running is offered but disabled (knee eval + Broström ankle). */
+/* Zone-2 hint on the cardio form. The HR band is an estimate (60–70% of a
+   formula-derived max), so it's shown alongside — not instead of — the talk
+   test, which measures the real thing. Both come from editable settings. */
+function renderZone2Hint(){
+  const el=$("zone2Hint"); if(!el) return;
+  const S=getSettings(), lo=S.zone2HrLo, hi=S.zone2HrHi;
+  el.innerHTML = (lo&&hi)
+    ? `Zone 2 = <b>${lo}–${hi} bpm</b> · conversational pace: full sentences, can’t comfortably sing. If the two disagree, trust the talk test.`
+    : `Zone 2 = conversational pace: full sentences, can’t comfortably sing.`;
+}
 function cardioMinutesSince(sinceISO){ let m=0; db.history.forEach(h=>{ if(h.type==="cardio" && h.date>=sinceISO) m+=(parseInt(h.minutes,10)||0); }); return m; }
 const CARDIO={modality:"stationary bike", min:"", hr:"", rpe:null, note:""};
 const CLASSA={activity:"class", name:"", min:"", press:"", note:""};
