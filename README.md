@@ -14,11 +14,17 @@ this repo only serves the static shell. No server, no accounts, no external requ
 - pomodoro.html — Focus Forge: a standalone gamified pomodoro timer + daily break planner (open directly)
 - manifest.json + icons — installable app identity
 - sw.js — offline cache
+- test/ — regression suite (`node test/run-tests.js`); no dependencies, no build step
 
 ## Focus Forge (pomodoro.html)
 A self-contained pomodoro timer with a daily "break menu" you fill in each morning.
 Finish a focus round, then pick a reward activity for your break. Earn XP, level up,
 build a daily streak, and unlock badges. Same local-first rules: no accounts, no network
 requests, all state in this device's localStorage. Just open the file (or host it on Pages).
+
+## Tests
+`node test/run-tests.js` — runs the app's own inline script inside a `node:vm`
+context backed by a DOM stub, so the suite exercises the shipped index.html
+directly rather than a copy of its logic. Nothing to install.
 
 Back up regularly: Vault tab → Export backup (JSON).

@@ -115,6 +115,19 @@
   .hc-bar{height:6px;border-radius:4px;background:var(--line);margin:8px 0 6px;overflow:hidden}
   .hc-bar span{display:block;height:100%;border-radius:4px}
   .hc-bar span.good{background:var(--ok)} .hc-bar span.warn{background:var(--warn)}
+  .hc-bar span.neut{background:var(--muted2)}   /* Change 9 — a floor below target: neutral, never red */
+  /* session-length estimate (Change 9) */
+  .sessest{margin:8px 18px 0;font-size:12px;line-height:1.5;color:var(--muted);border:1px solid var(--line);
+    border-radius:10px;padding:8px 12px;background:var(--surface)}
+  .sessest b{color:var(--text)}
+  .sessest.over{border-color:var(--warn);background:rgba(217,138,90,.08);color:var(--warn)}
+  .sessest.over b{color:var(--warn)}
+  /* in-window culprits under a soreness flag (Change 9) */
+  .sore-cul{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 0 9px;font-size:11px}
+  .sore-cul .cul-k{color:var(--muted2);font-weight:700;margin-right:2px}
+  .culchip{border:1px solid var(--line);background:var(--surface2);border-radius:6px;padding:1px 7px;font-size:10.5px;font-weight:700;color:var(--muted)}
+  .culchip.pressing{color:#e8776f;border-color:rgba(200,50,60,.32)}
+  .culchip.arm{color:var(--amber);border-color:rgba(232,177,90,.35)}
   .hc-sub{font-size:11px;color:var(--muted);line-height:1.4}
   .hc-sub .good{color:var(--ok);font-weight:700} .hc-sub .warn{color:var(--warn);font-weight:700}
 
@@ -308,6 +321,7 @@
   <div class="sect"><h2>Warm-up</h2><span class="meta">~4m</span></div>
   <div class="warm" id="warmlist"></div>
   <div class="sect"><h2>Workout</h2><span class="meta"><span id="setmeta"></span><span class="saveind" id="saveInd">saved ✓</span></span></div>
+  <div class="sessest" id="sessEst"></div>
   <div class="list" id="exlist"></div>
   <div class="actionrow">
     <button class="ghost" id="copySession" title="Copy shorthand log">📋</button>
@@ -413,6 +427,7 @@
     <div class="sorelbl">Joint</div>
     <div class="chips" id="soreJoint">
       <div class="tchip" data-v="shoulder">shoulder</div>
+      <div class="tchip" data-v="elbow">elbow</div>
       <div class="tchip" data-v="knee">knee</div>
       <div class="tchip" data-v="ankle">ankle</div>
       <div class="tchip" data-v="back">back</div>
@@ -432,6 +447,8 @@
 <div class="page" id="pg-trends">
   <div class="sect"><h2>Health</h2><span class="meta" style="color:var(--ok);font-family:var(--mono);font-size:11px">GOALS FIRST</span></div>
   <div id="healthCards"></div>
+  <div class="sect"><h2>Measurements</h2><span class="meta" style="color:var(--cyan);font-family:var(--mono);font-size:11px">RATIO BOARD</span></div>
+  <div id="ratioBoard"></div>
   <div class="sect"><h2>Shoulder-flag correlation</h2><span class="meta" style="color:var(--muted2);font-family:var(--mono);font-size:11px">72 H WINDOW</span></div>
   <div id="soreCorr"></div>
   <div class="sect"><h2>Personal records</h2><span class="meta" style="color:var(--amber);font-family:var(--mono);font-size:11px">EPLEY e1RM</span></div>
@@ -459,13 +476,26 @@
   <div class="sect"><h2>Weekly schedule</h2><span class="meta" style="color:var(--muted2);font-size:11px">tap a day to change</span></div>
   <div id="schedEditor" class="schedgrid"></div>
   <div class="footnote">Fixed weekday plan. Train opens on today's session; you can still pick any day from the tabs, and a missed day is just skipped — no penalty.</div>
+  <div class="sect"><h2>Body measurements</h2><span class="meta" style="color:var(--muted2);font-size:11px">inches · one decimal</span></div>
+  <div class="olform" id="measForm">
+    <label class="f full"><span>Date</span><input type="date" id="mDate"></label>
+    <label class="f full"><span>Shoulder <span style="color:var(--muted2)">(circumference)</span></span><input type="number" id="mShoulder" step="0.1" inputmode="decimal" placeholder="—"></label>
+    <label class="f full"><span>Waist</span><input type="number" id="mWaist" step="0.1" inputmode="decimal" placeholder="—"></label>
+    <label class="f full"><span>Left arm <span style="color:var(--muted2)">(flexed)</span></span><input type="number" id="mArmL" step="0.1" inputmode="decimal" placeholder="—"></label>
+    <label class="f full"><span>Right arm <span style="color:var(--muted2)">(flexed)</span></span><input type="number" id="mArmR" step="0.1" inputmode="decimal" placeholder="—"></label>
+    <div class="olnote">Leave a field blank to keep its last value — you can log just the arms.</div>
+    <button class="cta" id="mSave" style="width:100%;margin-top:12px">Save measurements</button>
+    <div id="mRecent"></div>
+  </div>
   <div class="sect"><h2>Profile & rules</h2></div>
   <div class="prof">
     <span class="tagline">Health-first training</span> — goal order: <b>health → cardio → joints → agility → aesthetics</b>. The V-taper (lateral delts · upper chest · lats · arms) still matters — just last, not first.<br><br>
     <b>Mission:</b> preserve + build muscle in a physician-supervised GLP-1 deficit (protein ~130–165 g/day is the lever), with cardiovascular health and pain-free joints ranking above the look.<br>
-    <b>Shoulder — chronic, managed ceiling:</b> not an injury in rehab, not on a re-entry ladder to "full." It's a permanent limitation. The payback is <b>delayed 24–72 h</b>, so the pre-committed weekly pressing cap — not in-session pain — is the real guardrail.<br>
+    <b>Bodyweight:</b> ~180 lb (2026-09-09).<br>
+    <b>Aesthetics — current priority:</b> Arms are the priority — direct biceps/triceps 3×/week.<br>
+    <b>Shoulder — chronic, managed ceiling:</b> not an injury in rehab, not on a re-entry ladder to "full." It's a permanent limitation. The payback is <b>delayed 24–72 h</b>, so the pre-committed weekly pressing cap — not in-session pain — is the real guardrail. <b>No overhead triceps extensions.</b><br>
     <b>Knee — flagged, undiagnosed:</b> pain after mild activity. <b>Low-impact only</b> until evaluated; running is held.<br>
-    <b>Guardrails:</b> shoulder → neutral-grip/landmine pressing + capped weekly pressing volume · knee → low-impact only, no running/impact · back → anterior-load + chest-supported · R ankle (Broström) → heel-elevate, cautious single-leg.<br>
+    <b>Guardrails:</b> shoulder → neutral-grip/landmine pressing + capped weekly pressing volume, no overhead triceps extensions · knee → low-impact only, no running/impact · back → anterior-load + chest-supported · R ankle (Broström) → heel-elevate, cautious single-leg.<br>
     <b>Action items:</b> ⏳ VA PT evaluation for knees.<br>
     <b>Progression (§8):</b> top of range on all sets at ≤ target RPE → +5 upper / +5–10 lower · reps hit but RPE high → hold · missed / spiking → back off · 2+ bad sessions → deload · load older than 21 days → recalibrate.<br>
     <b>RPE ruler:</b> 10 = failure · 9 = 1 RIR · 8 = 2 RIR · 7 = 3 RIR · 6 = 4 RIR.
@@ -489,7 +519,7 @@
    Durable core: storage, progression engine, math. No model in the loop.
    AI layer: you copy shorthand out to Claude; Claude never holds the data. */
 
-const APP = "qbranch", SCHEMA = 4, DB_KEY = "qbranch:v1";
+const APP = "qbranch", SCHEMA = 5, DB_KEY = "qbranch:v1";
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const todayISO = () => new Date().toLocaleDateString("en-CA");
@@ -513,8 +543,12 @@ const BASE = {
        cues:"Light — <b>no swing</b>. Lead with the elbows. This is your taper-builder.",sub:"Cable lateral raise"},
       {name:"Face Pull",tag:"Rear Delts · Shoulder health",muscle:"Rear Delts",sets:2,lo:15,hi:15,rpe:"6",rpeMax:6,rest:45,mode:"wt",inc:5,ss:"A",
        cues:"Pull to your eyes, rotate knuckles back. <b>Shoulder insurance.</b>",sub:"Band pull-apart"},
-      {name:"Plank",tag:"Core · Anti-extension",muscle:"Core",sets:3,lo:30,hi:45,rpe:"—",rpeMax:null,rest:60,mode:"time",inc:0,ss:"A",
+      {name:"Plank",tag:"Core · Anti-extension",muscle:"Core",sets:2,lo:30,hi:45,rpe:"—",rpeMax:null,rest:60,mode:"time",inc:0,ss:"A",
        cues:"Brace hard, ribs down, glutes tight — <b>protects the back</b>.",sub:"Dead bug 3×8/side"},
+      {name:"Incline DB Curl",tag:"Arms · Biceps",muscle:"Arms",sets:3,lo:10,hi:12,rpe:"8",rpeMax:8,rest:45,mode:"wt",inc:5,ss:"B",pressing:false,overhead:false,
+       cues:"Bench at ~45°, upper arms <b>behind the torso</b> — that stretch is the whole point. No swing.",sub:"Seated DB Curl"},
+      {name:"Rope Pushdown",tag:"Arms · Triceps",muscle:"Arms",sets:3,lo:12,hi:15,rpe:"8",rpeMax:8,rest:45,mode:"wt",inc:5,ss:"B",pressing:false,overhead:false,
+       cues:"Elbows pinned to your sides; <b>spread the rope</b> at the bottom. Elbows stay down — never overhead.",sub:"Straight-bar Pushdown"},
     ]},
   B:{focus:"Legs / Pull emphasis",
     warm:[["Row or stair master, easy","3 min"],["Leg swings + ankle circles","×10/side"],["Bodyweight split squats","×8/side"]],
@@ -527,10 +561,14 @@ const BASE = {
        cues:"Medium <b>neutral or underhand</b> grip if shoulders bark. Pull to collarbone, long stretch up top.",sub:"Assisted pull-up"},
       {name:"Seated Cable Row",tag:"Mid-back",muscle:"Back",sets:3,lo:10,hi:12,rpe:"7",rpeMax:7,rest:75,mode:"wt",inc:5,
        cues:"Chest tall, <b>no torso heave</b> — the low back stays out of it.",sub:"Chest-supported row"},
-      {name:"DB Hammer Curl",tag:"Arms · Brachialis",muscle:"Arms",sets:2,lo:10,hi:12,rpe:"8",rpeMax:8,rest:60,mode:"wt",inc:5,ss:"A",
+      {name:"DB Hammer Curl",tag:"Arms · Brachialis",muscle:"Arms",sets:2,lo:10,hi:12,rpe:"8",rpeMax:8,rest:60,mode:"wt",inc:5,ss:"A",pressing:false,overhead:false,
        cues:"Neutral grip is <b>elbow-friendly</b>. No swing; squeeze at the top.",sub:"Cable rope curl"},
-      {name:"Dead Bug",tag:"Core · Anti-extension",muscle:"Core",sets:3,lo:8,hi:8,rpe:"—",rpeMax:null,rest:45,mode:"time",inc:0,ss:"A",
+      {name:"Dead Bug",tag:"Core · Anti-extension",muscle:"Core",sets:2,lo:8,hi:8,rpe:"—",rpeMax:null,rest:45,mode:"time",inc:0,ss:"A",
        cues:"8/side, slow. <b>Low back glued to the floor</b> — exhale as the limbs extend.",sub:"Pallof press"},
+      {name:"Hammer Curl",tag:"Arms · Biceps · Brachialis",muscle:"Arms",sets:3,lo:10,hi:12,rpe:"8",rpeMax:8,rest:45,mode:"wt",inc:5,ss:"B",pressing:false,overhead:false,
+       cues:"Neutral grip is <b>elbow-friendly</b>. Squeeze at the top, control the way down — no swing.",sub:"Cross-body Hammer Curl"},
+      {name:"Lying DB Triceps Extension",tag:"Arms · Triceps",muscle:"Arms",sets:3,lo:10,hi:12,rpe:"8",rpeMax:8,rest:45,mode:"wt",inc:5,ss:"B",pressing:false,overhead:false,
+       cues:"Flat on the bench, <b>upper arms vertical</b>. Lower toward the forehead — the arms never travel overhead.",sub:"EZ-bar Skullcrusher"},
     ]},
   C:{focus:"Push / Delts emphasis",
     warm:[["Row or stair master, easy","3 min"],["Shoulder circles + arm swings","×10 each"],["Wall slides","×10"]],
@@ -543,12 +581,16 @@ const BASE = {
        cues:"Start palms-in at the chin, <b>rotate to palms-out</b> as you press up. Keep the turn smooth and the range <b>pain-free</b> — ease off the bottom rotation if the shoulder barks.",sub:"Neutral-grip DB shoulder press"},
       {name:"Cable Lateral Raise",pressing:true,tag:"Side Delts",muscle:"Side Delts",sets:3,lo:12,hi:15,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
        cues:"Constant tension the DBs can't give. <b>Lead with the elbow</b>, no shrug.",sub:"DB lateral raise"},
-      {name:"Rope Pushdown",tag:"Arms · Triceps",muscle:"Arms",sets:2,lo:10,hi:12,rpe:"8",rpeMax:8,rest:60,mode:"wt",inc:5,
-       cues:"Elbows pinned; <b>spread the rope</b> at the bottom.",sub:"DB overhead extension"},
+      {name:"Rope Pushdown",tag:"Arms · Triceps",muscle:"Arms",sets:2,lo:10,hi:12,rpe:"8",rpeMax:8,rest:60,mode:"wt",inc:5,pressing:false,overhead:false,
+       cues:"Elbows pinned; <b>spread the rope</b> at the bottom.",sub:"Straight-bar Pushdown"},
       {name:"Face Pull",tag:"Rear Delts · Shoulder health",muscle:"Rear Delts",sets:2,lo:15,hi:15,rpe:"6",rpeMax:6,rest:45,mode:"wt",inc:5,ss:"A",
        cues:"Pull to your eyes, rotate knuckles back. <b>Shoulder insurance, every push day.</b>",sub:"Band pull-apart"},
-      {name:"Pallof Press",tag:"Core · Anti-rotation",muscle:"Core",sets:3,lo:8,hi:8,rpe:"—",rpeMax:null,rest:45,mode:"time",inc:0,ss:"A",
+      {name:"Pallof Press",tag:"Core · Anti-rotation",muscle:"Core",sets:2,lo:8,hi:8,rpe:"—",rpeMax:null,rest:45,mode:"time",inc:0,ss:"A",
        cues:"8/side, 2s hold pressed out. <b>Hips and shoulders square</b> — resist the twist.",sub:"Dead bug"},
+      {name:"Cable Curl (Bayesian)",tag:"Arms · Biceps",muscle:"Arms",sets:3,lo:12,hi:15,rpe:"8",rpeMax:8,rest:45,mode:"wt",inc:5,ss:"B",pressing:false,overhead:false,
+       cues:"Face away from a low pulley, arm <b>behind the body line</b> — constant tension right through the stretch.",sub:"Cable Curl, standard"},
+      {name:"Cable Kickback",tag:"Arms · Triceps",muscle:"Arms",sets:3,lo:12,hi:15,rpe:"8",rpeMax:8,rest:45,mode:"wt",inc:5,ss:"B",pressing:false,overhead:false,
+       cues:"Hinge slightly, <b>upper arm locked parallel</b> to the floor. Squeeze straight back — the elbow never rises past the shoulder.",sub:"DB Kickback"},
     ]}
 };
 
@@ -671,6 +713,25 @@ const PRESSING_NAMES=new Set();
 })();
 function isPressingName(n){ return PRESSING_NAMES.has(String(n||"").toLowerCase()); }
 
+/* direct-arm attribution (Change 9): the closing biceps/triceps superset on each
+   day, plus each one's swap alternate — a swapped set logs the alternate's name
+   and is still direct arm work, so it still counts toward the weekly floor.
+   Deliberately built from `ss:"B"` arm slots only: the older mid-session arm
+   accessories are not part of the 9-biceps/9-triceps prescription. Note that a
+   legacy slot sharing a name with a superset movement (Day C's Rope Pushdown)
+   is counted by name, exactly as pressing attribution works. */
+const ARM_NAMES=new Set();
+(function(){
+  const add=d=>{ if(d && d.muscle==="Arms" && d.ss==="B"){ ARM_NAMES.add(d.name.toLowerCase()); const a=altName(d); if(a) ARM_NAMES.add(a.toLowerCase()); } };
+  ["A","B","C"].forEach(day=>BASE[day].ex.forEach(add));
+})();
+function isArmName(n){ return ARM_NAMES.has(String(n||"").toLowerCase()); }
+
+/* Movements the shoulder rule bars outright (Change 9 — no overhead triceps).
+   `overhead:true` on a def, or an alternate whose name says overhead, must never
+   be reachable from an arm slot; the test suite asserts it. */
+function isOverheadName(n){ return /\boverhead\b/i.test(String(n||"")); }
+
 /* ---------- storage: single versioned store, autosave, safe fallback ---------- */
 /* Editable-by-data defaults (never magic numbers in the render path). All of
    these live on db.settings / db.schedule so they can be edited and survive in
@@ -681,6 +742,12 @@ const DEFAULT_SETTINGS = {
   sorenessWindowHours: 72,    // Change 4 — retroactive attribution window
   zone2Lo: 50, zone2Hi: 75,   // Change 6 — weekly Zone-2 minutes target band
   zone2HrLo: 108, zone2HrHi: 126, // Zone-2 HR band — 60–70% of est. max HR (Tanaka, age 39). Estimate: the talk test wins.
+  armSetsTargetPerWeek: 18,   // Change 9 — weekly direct-arm FLOOR (9 biceps + 9 triceps), not a ceiling
+  armSetsGreenAt: 15,         // Change 9 — arm tile reads green at/above this; neutral below; never red
+  sessionBudgetMin: 35,       // Change 9 — session-length ceiling the estimate flags against
+  estWarmupMin: 4,            // Change 9 — session-length estimate inputs (all editable, no magic numbers)
+  estWorkSecPerSet: 45,       //            time under load + setup for one working set
+  estTransitionSec: 45,       //            walking to the next station / loading it
 };
 /* Weekday → session. type:"lift" carries a day A/B/C; "cardio" a label;
    "open" is unscheduled. Stored as data so the user can override any day. */
@@ -708,6 +775,7 @@ function seed(){
     schedule:JSON.parse(JSON.stringify(DEFAULT_SCHEDULE)),
     sorenessFlags:[],
     pressingOverrides:[],
+    measurements:[],
     history:[{
       id:"seed-2026-07-05-A", type:"lift", date:"2026-07-05", day:"A", block:0, flags:[], exercises:[
         {name:"Goblet Squat", sets:[{rep:"10",wt:"35",rpe:""},{rep:"10",wt:"35",rpe:"7-8"},{rep:"10",wt:"35",rpe:"7-8"}], note:"quad cramp after S1 — pushed through"},
@@ -751,6 +819,11 @@ const MIGRATIONS = {
     });
     return d;
   },
+  5: d => { // Change 9 — arm block: new settings constants + body-measurement log
+    d.settings = Object.assign({}, DEFAULT_SETTINGS, d.settings||{});
+    d.measurements = Array.isArray(d.measurements) ? d.measurements : [];
+    return d;
+  },
 };
 function migrate(d){
   if(!d) return d;
@@ -769,6 +842,7 @@ function migrate(d){
   if(!d.schedule || typeof d.schedule!=="object") d.schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
   if(!Array.isArray(d.sorenessFlags)) d.sorenessFlags=[];
   if(!Array.isArray(d.pressingOverrides)) d.pressingOverrides=[];
+  if(!Array.isArray(d.measurements)) d.measurements=[];
   (d.history||[]).forEach((h,i)=>{ if(!h.id) h.id="s"+i+"-"+(h.date||"?")+"-"+(h.day||"x");
     if(!h.type) h.type="lift"; if(!Array.isArray(h.flags)) h.flags=[]; });
   return d;
@@ -836,6 +910,62 @@ function twoCleanShoulderWeeks(){
   return !flagged && pressingSetsBanked(since) >= cap;
 }
 
+/* ---------- direct-arm volume floor (Change 9) — the mirror of the cap --------
+   Same rolling 7-day window and the same banked+live arithmetic as pressing,
+   but read the other way round: pressing is a ceiling you must stay under, arms
+   are a floor you are trying to reach. Nothing is ever blocked or coloured red
+   for being low — a missed week is information, not a failure. */
+function armSetsBanked(sinceISO){
+  let n=0;
+  db.history.forEach(h=>{
+    if(h.date < sinceISO) return;
+    (h.exercises||[]).forEach(e=>{ if(isArmName(e.name)) n += e.sets.filter(s=>s.rep!=="").length; });
+  });
+  return n;
+}
+function armSetsLive(){
+  let n=0;
+  ["A","B","C"].forEach(day=>{ const s=db.sessions[day]; if(!s||!s.data) return;
+    s.data.forEach(x=>{ if(isArmName(x.name)) n += x.sets.filter(v=>v.rep!=="").length; }); });
+  return n;
+}
+function armSetsWeek(){ return armSetsBanked(daysAgoISO(6)) + armSetsLive(); }
+function armSetState(){
+  const S=getSettings(), target=S.armSetsTargetPerWeek|0, n=armSetsWeek();
+  return {target, n, green:n>=(S.armSetsGreenAt|0), hit:n>=target};
+}
+
+/* ---------- session-length estimate (Change 9) ------------------------------
+   Deterministic from the day's own template: work time per set, the def's own
+   prescribed rest between sets of an exercise, and one transition per station.
+   Rest is charged (sets-1) times — the gap after the last set IS the transition
+   to the next station, so charging both would double-count it. All inputs are
+   editable settings. The estimate only ever reports; it never drops a slot. */
+function estimateSessionMinutes(defs){
+  const S=getSettings();
+  let sec=(S.estWarmupMin||0)*60;
+  (defs||[]).forEach(d=>{
+    const sets=d.sets|0;
+    sec += sets*(S.estWorkSecPerSet||0) + Math.max(0,sets-1)*(d.rest||0) + (S.estTransitionSec||0);
+  });
+  return Math.round(sec/60);
+}
+/* When the day runs long, name the set the owner should consider dropping.
+   Arms and core are never the suggestion — the arm superset is the priority
+   this block, and core is already trimmed to 2. Rows go first (Back), then the
+   heaviest remaining non-arm accessory. */
+function trimCandidate(defs){
+  const eligible=(defs||[]).filter(d=>d.muscle!=="Arms" && d.muscle!=="Core" && (d.sets|0)>1);
+  if(!eligible.length) return null;
+  const rows=eligible.filter(d=>d.muscle==="Back");
+  const pool=rows.length?rows:eligible;
+  return pool.reduce((a,b)=>(b.sets|0)>(a.sets|0)?b:a);
+}
+function sessionEstState(defs){
+  const S=getSettings(), min=estimateSessionMinutes(defs), budget=S.sessionBudgetMin|0;
+  return {min, budget, over:min>budget, trim:min>budget?trimCandidate(defs):null};
+}
+
 /* ---------- delayed soreness flags (Change 4) — connect payback to cause -------
    The app previously had no way to link "Saturday's session" to "Monday's
    shoulder." A flag is retroactive; on submit it attributes to every banked
@@ -862,6 +992,25 @@ function removeSoreness(id){
 }
 function flagsForSession(h){ const byId={}; (db.sorenessFlags||[]).forEach(f=>byId[f.id]=f);
   return (h.flags||[]).map(id=>byId[id]).filter(Boolean); }
+/* Change 9 — the exercise filter behind the flag summary is JOINT-scoped, never
+   `pressing:true`-scoped. The elbow is an arm joint and the shoulder takes load
+   from curls and pushdowns too, so an in-window arm movement surfaces right
+   alongside the pressing ones instead of being invisible. */
+const JOINT_SCOPE={ shoulder:["pressing","arm"], elbow:["arm","pressing"] };
+function flagCulprits(flag){
+  const scope=JOINT_SCOPE[flag&&flag.joint]; if(!scope) return [];
+  const byId={}; db.history.forEach(h=>{ byId[h.id]=h; });
+  const out=[];
+  (flag.sessions||[]).forEach(id=>{
+    const h=byId[id]; if(!h) return;
+    (h.exercises||[]).forEach(e=>{
+      if(!e.sets.some(s=>s.rep!=="")) return;
+      const kind = isPressingName(e.name) ? "pressing" : (isArmName(e.name) ? "arm" : null);
+      if(kind && scope.indexOf(kind)>=0 && !out.some(x=>x.name===e.name)) out.push({name:e.name, kind});
+    });
+  });
+  return out;
+}
 function sessionFlagBadge(h){
   const fs=flagsForSession(h); if(!fs.length) return "";
   const byJoint={}; fs.forEach(f=>{ byJoint[f.joint]=Math.max(byJoint[f.joint]||0, f.severity||0); });
@@ -894,8 +1043,13 @@ function renderCorr(){
 function renderSoreRecent(){
   const el=$("soreRecent"); if(!el) return;
   const fs=[...(db.sorenessFlags||[])].sort((a,b)=>a.date<b.date?1:-1).slice(0,6);
-  el.innerHTML = fs.length ? `<div class="sorelbl">Recent flags</div>`+fs.map(f=>
-     `<div class="sore-item"><span>⚠ <b>${esc(f.joint)}</b> ${f.severity}/5 · ${esc(f.date)} · ${f.sessions.length} session${f.sessions.length===1?"":"s"}</span><button class="x" data-id="${esc(f.id)}" title="remove flag">✕</button></div>`).join("") : "";
+  el.innerHTML = fs.length ? `<div class="sorelbl">Recent flags</div>`+fs.map(f=>{
+     const cul=flagCulprits(f);
+     const culLine=cul.length
+       ? `<div class="sore-cul"><span class="cul-k">in window:</span>${cul.map(c=>`<span class="culchip ${c.kind}">${esc(c.name)}</span>`).join("")}</div>`
+       : "";
+     return `<div class="sore-item"><span>⚠ <b>${esc(f.joint)}</b> ${f.severity}/5 · ${esc(f.date)} · ${f.sessions.length} session${f.sessions.length===1?"":"s"}</span><button class="x" data-id="${esc(f.id)}" title="remove flag">✕</button></div>${culLine}`;
+   }).join("") : "";
   el.querySelectorAll(".x").forEach(b=>b.onclick=()=>removeSoreness(b.dataset.id));
 }
 
@@ -1265,8 +1419,21 @@ function renderTrain(){
     });
   });
   $("setmeta").textContent = defs.reduce((a,d)=>a+d.sets,0)+" sets";
+  renderSessionEst(defs);
   renderTodaySched(); renderZone2Hint(); renderPressCap(); updatePressGate();
   persist();
+}
+
+/* Change 9 — report the day's length, never edit it. If the day runs long the
+   banner names one row set to drop; the arm superset is never the suggestion
+   and is never dropped automatically. */
+function renderSessionEst(defs){
+  const el=$("sessEst"); if(!el) return;
+  const st=sessionEstState(defs);
+  el.className="sessest"+(st.over?" over":"");
+  el.innerHTML = st.over
+    ? `<b>~${st.min} min</b> — over the ${st.budget} min budget.${st.trim?` Need the time back? Drop <b>one ${esc(st.trim.name)} set</b> — the arm superset stays.`:""}`
+    : `<b>~${st.min} min</b> — inside the ${st.budget} min budget.`;
 }
 
 /* ---------- rest timer (wall-clock based; audio + vibration) ----------
@@ -1464,6 +1631,28 @@ $("soreSave").onclick=()=>{
   showToast(n ? `Flagged — linked to ${n} session${n===1?"":"s"} in the prior 72 h` : "Flagged — no sessions in the prior 72 h to link");
 };
 
+/* ---------- body-measurement wiring (Change 9) ---------- */
+function renderMeasureRecent(){
+  const el=$("mRecent"); if(!el) return;
+  const rows=measurementsSorted().slice(-4).reverse();
+  el.innerHTML = rows.length
+    ? `<div class="sorelbl">Recent</div>`+rows.map(m=>{
+        const bits=MEASURE_FIELDS.filter(([k])=>m[k]!=null && m[k]!=="").map(([k,lbl])=>`${esc(lbl)} ${m[k]}"`);
+        return `<div class="sore-item"><span>${esc(m.date)} · ${bits.join(" · ")||"—"}</span></div>`;
+      }).join("")
+    : `<div class="corr-note">No measurements logged yet — shoulder, waist and both flexed arms feed the Trends ratio board.</div>`;
+}
+if($("mDate")) $("mDate").value=todayISO();
+if($("mSave")) $("mSave").onclick=()=>{
+  const n=saveMeasurement({date:$("mDate").value||todayISO(),
+    shoulder:$("mShoulder").value, waist:$("mWaist").value,
+    armL:$("mArmL").value, armR:$("mArmR").value});
+  if(!n){ showToast("Enter at least one measurement"); return; }
+  ["mShoulder","mWaist","mArmL","mArmR"].forEach(id=>{ const e=$(id); if(e) e.value=""; });
+  renderMeasureRecent(); renderTrends();
+  showToast(`Saved ${n} measurement${n===1?"":"s"} ✓`);
+};
+
 /* ---------- other-session logging: cardio + class/external (Changes 2 & 5) ----
    Cardio and classes are first-class banked sessions (type on the history entry)
    that count toward adherence like lifts, but do NOT advance the lifting block.
@@ -1529,6 +1718,54 @@ $("classSave").onclick=()=>{
   showOther("class"); showToast(est?`Activity banked ✓ — +${est} pressing to the weekly cap`:"Activity banked ✓ — counts toward adherence");
 };
 
+/* ---------- body measurements (Change 9) ------------------------------------
+   Flexed arm circumference joins shoulder and waist in the Vault. Stored as a
+   dated log (one row per date, fields merged) so Trends can show a delta rather
+   than a bare number. Inches to one decimal; blank fields are left untouched so
+   you can log just an arm without clearing the rest. */
+const MEASURE_FIELDS=[["shoulder","Shoulder"],["waist","Waist"],["armL","Left arm"],["armR","Right arm"]];
+function measurementsSorted(){ return [...(db.measurements||[])].sort((a,b)=>a.date<b.date?-1:1); }
+function latestMeasure(field){
+  const rows=measurementsSorted().filter(r=>r[field]!=null && r[field]!=="" && !isNaN(parseFloat(r[field])));
+  if(!rows.length) return null;
+  const v=parseFloat(rows[rows.length-1][field]);
+  const prev=rows.length>1 ? parseFloat(rows[rows.length-2][field]) : null;
+  return {v, date:rows[rows.length-1].date, n:rows.length,
+    delta: prev!=null ? Math.round((v-prev)*10)/10 : null};
+}
+function saveMeasurement(rec){
+  const date=(rec&&rec.date)||todayISO();
+  const clean={date}; let n=0;
+  MEASURE_FIELDS.forEach(([k])=>{
+    const raw=String(rec&&rec[k]!=null?rec[k]:"").trim();
+    if(raw==="") return;
+    const v=Math.round(parseFloat(raw)*10)/10;
+    if(!isNaN(v)){ clean[k]=v; n++; }
+  });
+  if(!n) return 0;
+  if(!Array.isArray(db.measurements)) db.measurements=[];
+  const i=db.measurements.findIndex(m=>m.date===date);
+  if(i>=0) db.measurements[i]=Object.assign({}, db.measurements[i], clean);
+  else db.measurements.push(clean);
+  db.measurements.sort((a,b)=>a.date<b.date?-1:1);
+  persist();
+  return n;
+}
+/* The V-taper ratio stays exactly what it was: shoulder ÷ waist. Arm
+   circumference is reported on its own line and is deliberately NOT folded
+   into it — a bigger arm should never flatter the taper number. */
+function shoulderToWaist(){
+  const sh=latestMeasure("shoulder"), w=latestMeasure("waist");
+  if(!sh||!w||!w.v) return null;
+  return Math.round(sh.v/w.v*100)/100;
+}
+function armAverage(){
+  const l=latestMeasure("armL"), r=latestMeasure("armR");
+  if(!l && !r) return null;
+  if(l && r) return Math.round((l.v+r.v)/2*10)/10;
+  return (l||r).v;
+}
+
 /* ---------- trends ---------- */
 /* Change 6 — health metrics lead the tab. All deterministic from local data. */
 function rhrSeries(){ return db.telemetry.filter(e=>e.raw && e.raw.rhr!=="" && e.raw.rhr!=null)
@@ -1554,10 +1791,16 @@ function renderHealth(){
   const p=pressCapState(), ppct=p.cap?Math.min(100,Math.round(p.n/p.cap*100)):0;
   const pCard=`<div class="hcard"><div class="hc-lbl">Pressing sets</div><div class="hc-val">${p.n}<span class="hc-u">/ ${p.cap}</span></div>
      <div class="hc-bar"><span class="${p.over?"warn":"good"}" style="width:${ppct}%"></span></div><div class="hc-sub">weekly shoulder cap</div></div>`;
+  /* Change 9 — the mirror of the pressing tile: same visual pattern, opposite
+     meaning. A floor, so it reads green once it is met and stays neutral (never
+     red) below — a light week is information, not a scolding. */
+  const arm=armSetState(), armPct=arm.target?Math.min(100,Math.round(arm.n/arm.target*100)):0;
+  const armCard=`<div class="hcard"><div class="hc-lbl">Arm sets this week</div><div class="hc-val">${arm.n}<span class="hc-u">/ ${arm.target}</span></div>
+     <div class="hc-bar"><span class="${arm.green?"good":"neut"}" style="width:${armPct}%"></span></div><div class="hc-sub">direct work — a floor to hit</div></div>`;
   const sched=scheduledCountLast7(), done=completedCountLast7(), apct=sched?Math.min(100,Math.round(done/sched*100)):0;
   const aCard=`<div class="hcard"><div class="hc-lbl">Adherence · 7d</div><div class="hc-val">${done}<span class="hc-u">/ ${sched||0}</span></div>
      ${sched?`<div class="hc-bar"><span class="good" style="width:${apct}%"></span></div>`:""}<div class="hc-sub">${sched?"sessions done vs scheduled":"nothing scheduled"}</div></div>`;
-  el.innerHTML=`<div class="hcards">${rhrCard}${zCard}${pCard}${aCard}</div>`;
+  el.innerHTML=`<div class="hcards">${rhrCard}${zCard}${pCard}${armCard}${aCard}</div>`;
 }
 function epley(w,r){return r>0?Math.round(w*(1+r/30)*10)/10:0;}
 function computePRs(){
@@ -1574,8 +1817,33 @@ function sessionTonnage(h){
   let t=0; (h.exercises||[]).forEach(e=>e.sets.forEach(s=>{
     const w=parseFloat(s.wt),r=parseInt(s.rep,10); if(w&&r)t+=w*r;})); return t;
 }
+/* Change 9 — measurement scoreboard. Arm circumference is its OWN line, not a
+   term in the taper ratio; the two answer different questions. */
+function renderRatios(){
+  const el=$("ratioBoard"); if(!el) return;
+  const sh=latestMeasure("shoulder"), wa=latestMeasure("waist");
+  const l=latestMeasure("armL"), r=latestMeasure("armR");
+  const sw=shoulderToWaist(), avg=armAverage();
+  const dlt=m=>(m && m.delta!=null && m.delta!==0)
+    ? ` <span class="${m.delta>0?"good":"warn"}">${m.delta>0?"+":""}${m.delta}"</span>` : "";
+  const armDetail=(l||r)
+    ? `L ${l?l.v.toFixed(1)+'"'+dlt(l):"—"} · R ${r?r.v.toFixed(1)+'"'+dlt(r):"—"}`
+    : "log flexed arms in the Vault";
+  const taperDetail=(sh&&wa) ? `${sh.v.toFixed(1)}" shoulder ÷ ${wa.v.toFixed(1)}" waist`
+    : "log shoulder + waist in the Vault";
+  const rows=[
+    ["Shoulder-to-waist", sw!=null?sw.toFixed(2):"—", taperDetail],
+    ["Arm circumference", avg!=null?avg.toFixed(1)+'"':"—", armDetail],
+  ];
+  el.innerHTML=`<div class="tblcard"><table class="corr-tbl">
+      <tr><th>Measure</th><th class="n">Now</th><th>Detail</th></tr>
+      ${rows.map(([a,b,c])=>`<tr><td>${esc(a)}</td><td class="n">${esc(b)}</td><td>${c}</td></tr>`).join("")}
+    </table></div>
+    <div class="corr-note">Arms sit on their own line on purpose — folding them into the taper ratio would let a bigger arm flatter a number it has nothing to do with. Flexed, inches, one decimal.</div>`;
+}
 function renderTrends(){
   renderHealth();
+  renderRatios();
   const prs=computePRs();
   const names=Object.keys(prs);
   $("prTable").innerHTML="<tr><th>Lift</th><th>e1RM</th><th>Best set</th><th>Date</th></tr>"+
@@ -1660,10 +1928,17 @@ $("vFile").addEventListener("change",e=>{
       const d=JSON.parse(r.result);
       if(!(d && d.app===APP && Array.isArray(d.history) && Array.isArray(d.telemetry))) throw 0;
       if(!confirm(`Restore backup from ${d.exported||"unknown date"}? This replaces current data (${db.history.length} sessions).`)) return;
-      db=migrate({app:APP,schema:SCHEMA,created:d.created||todayISO(),program:d.program||db.program,
-          history:d.history,telemetry:d.telemetry,sessions:d.sessions,session:d.session});
+      // Carry every stored branch across, and migrate from the BACKUP's schema —
+      // pinning it to SCHEMA skipped the ladder, and the short field list quietly
+      // dropped settings/schedule/flags (and would now drop measurements too).
+      db=migrate({app:APP, schema:(typeof d.schema==="number"?d.schema:1), created:d.created||todayISO(),
+          program:d.program||db.program, history:d.history, telemetry:d.telemetry,
+          sessions:d.sessions, session:d.session,
+          settings:d.settings, schedule:d.schedule, sorenessFlags:d.sorenessFlags,
+          pressingOverrides:d.pressingOverrides, measurements:d.measurements});
       persist(); curDay=["A","B","C"].find(x=>db.sessions[x])||defaultDayForToday(); rebuildProgram();
-      renderTrain(); renderTrends(); showToast("Backup restored ✓");
+      renderTrain(); renderTrends(); renderSoreRecent(); renderSchedule(); renderMeasureRecent();
+      showToast("Backup restored ✓");
     }catch(err){ showToast("That file isn't a valid Q Branch backup"); }
     e.target.value="";
   };
@@ -1698,7 +1973,8 @@ $("vReset").onclick=()=>{
   if(!confirm("Last check: really erase everything?"))return;
   try{localStorage.removeItem(DB_KEY);}catch(e){}
   db=seed(); persist(); curDay="A"; rebuildProgram();
-  renderTrain(); renderTrends(); showToast("Reset — reseeded with your 07-05 baseline");
+  renderTrain(); renderTrends(); renderSoreRecent(); renderMeasureRecent();
+  showToast("Reset — reseeded with your 07-05 baseline");
 };
 
 /* ---------- shared: clipboard, toast, nav ---------- */
@@ -1733,7 +2009,7 @@ document.addEventListener("keydown",e=>{
 });
 
 /* ---------- boot ---------- */
-renderTrain(); renderTele(); renderTrends(); renderVaultStat(); renderSoreRecent(); renderSchedule();
+renderTrain(); renderTele(); renderTrends(); renderVaultStat(); renderSoreRecent(); renderSchedule(); renderMeasureRecent();
 // make the telemetry tap-chips keyboard-operable (clicks bubble to their group handler)
 document.querySelectorAll("#pg-log .tchip, #pg-train .tchip").forEach(c=>{ c.setAttribute("role","button"); c.tabIndex=0; });
 /* offline shell: cache-first service worker (no-ops on file:// or unsupported) */
