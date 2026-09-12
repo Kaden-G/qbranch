@@ -2,7 +2,7 @@
    Shell (navigations + index.html) is network-first so a freshly deployed
    build reaches installed devices immediately; other assets are cache-first.
    Cache falls back on any network failure, so offline still works. */
-const CACHE = "qbranch-v5";
+const CACHE = "qbranch-v6";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", e => {

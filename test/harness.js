@@ -126,10 +126,18 @@ function boot() {
     html: id => byId(id).innerHTML,
     text: id => byId(id).textContent,
     cls: id => byId(id).className,
-    /* Back to a clean seeded database between tests. */
+    /* Back to a clean seeded database between tests. A fresh install starts in
+       Block 0, which is where the app now actually opens. */
     reset() {
       localStorage.clear();
-      run(`db = seed(); rebuildProgram(); curDay = "A"; writeNow();`);
+      run(`db = seed(); rebuildProgram(); curDay = Object.keys(PROGRAM)[0]; writeNow();`);
+    },
+    /* Jump the install to a given block — Block 1 is the full A/B/C program, so
+       every Change 9 assertion about templates is made against it explicitly
+       rather than against whatever block the app happens to boot into. */
+    toBlock(i) {
+      run(`db.program={i:${i|0}, done:0}; db.sessions={A:null,B:null,C:null};
+           rebuildProgram(); curDay=Object.keys(PROGRAM)[0]; writeNow();`);
     },
   };
 }
