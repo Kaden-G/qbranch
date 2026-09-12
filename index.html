@@ -115,6 +115,19 @@
   .hc-bar{height:6px;border-radius:4px;background:var(--line);margin:8px 0 6px;overflow:hidden}
   .hc-bar span{display:block;height:100%;border-radius:4px}
   .hc-bar span.good{background:var(--ok)} .hc-bar span.warn{background:var(--warn)}
+  .hc-bar span.neut{background:var(--muted2)}   /* Change 9 — a floor below target: neutral, never red */
+  /* session-length estimate (Change 9) */
+  .sessest{margin:8px 18px 0;font-size:12px;line-height:1.5;color:var(--muted);border:1px solid var(--line);
+    border-radius:10px;padding:8px 12px;background:var(--surface)}
+  .sessest b{color:var(--text)}
+  .sessest.over{border-color:var(--warn);background:rgba(217,138,90,.08);color:var(--warn)}
+  .sessest.over b{color:var(--warn)}
+  /* in-window culprits under a soreness flag (Change 9) */
+  .sore-cul{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 0 9px;font-size:11px}
+  .sore-cul .cul-k{color:var(--muted2);font-weight:700;margin-right:2px}
+  .culchip{border:1px solid var(--line);background:var(--surface2);border-radius:6px;padding:1px 7px;font-size:10.5px;font-weight:700;color:var(--muted)}
+  .culchip.pressing{color:#e8776f;border-color:rgba(200,50,60,.32)}
+  .culchip.arm{color:var(--amber);border-color:rgba(232,177,90,.35)}
   .hc-sub{font-size:11px;color:var(--muted);line-height:1.4}
   .hc-sub .good{color:var(--ok);font-weight:700} .hc-sub .warn{color:var(--warn);font-weight:700}
 
@@ -126,6 +139,26 @@
   .warm-item + .warm-item{border-top:1px solid var(--line)}
   .dot{width:7px;height:7px;border-radius:50%;background:var(--accent-bright);flex:none}
   .warm-item .r{margin-left:auto;color:var(--muted);font-size:13px}
+  .warm-item .wtxt{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .warm-item .wcue{color:var(--muted2);font-size:11.5px;line-height:1.35}
+  .unlocknote{margin:0 18px 10px;background:rgba(52,211,153,.10);border:1px solid rgba(52,211,153,.42);
+    border-radius:14px;padding:12px 14px;font-size:13.5px;line-height:1.5;color:var(--fg)}
+  .unlocknote b{color:var(--ok)}
+  .unlocknote button{margin-top:8px;background:none;border:0;color:var(--ok);font:inherit;font-size:12.5px;cursor:pointer;padding:0}
+  .gatestrip{margin:0 18px 10px;display:flex;flex-direction:column;gap:7px}
+  .gatestrip:empty{display:none}
+  .gs-top{display:flex;align-items:baseline;gap:8px;font-size:12px;color:var(--muted)}
+  .gs-num{margin-left:auto;font-family:var(--mono);color:var(--fg)}
+  .gs-boxes{display:flex;gap:6px}
+  .gs-box{flex:1;height:26px;border-radius:7px;border:1px solid var(--line);background:var(--surface);
+    display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted2)}
+  .gs-box.on{background:rgba(52,211,153,.16);border-color:rgba(52,211,153,.5);color:var(--ok)}
+  .gs-msg{font-size:12px;color:var(--muted2);line-height:1.45}
+  .benchrow{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface);
+    border:1px solid var(--line);border-radius:12px;margin-bottom:8px;font-size:14px}
+  .benchrow .x{margin-left:auto;background:none;border:0;color:var(--muted);font-size:15px;cursor:pointer}
+  .benchrow .x:hover{color:var(--ok)}
+  .benchempty{color:var(--muted2);font-size:12.5px;padding:2px 2px 8px}
 
   .list{margin:2px 18px 0}
   .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;margin-top:12px;overflow:hidden}
@@ -302,12 +335,16 @@
   <div class="todaysched" id="todaySched"></div>
   <div class="daytabs" id="daytabs"></div>
   <button class="expressbtn" id="expressBtn" type="button"></button>
+  <button class="expressbtn" id="homeBtn" type="button"></button>
+  <div class="unlocknote" id="unlockNote" style="display:none"></div>
+  <div class="gatestrip" id="gateStrip"></div>
   <div class="presscap" id="pressCap"></div>
   <div class="note" id="resumeNote" style="display:none">↩︎ <span><b>Resumed your in-progress session.</b> Everything you'd entered is intact.</span></div>
   <div class="note">🛟 <span><b>Auto-saves on every tap.</b> Lock your phone, switch apps, close the tab — your session survives on this device. Finish with “Complete session” to bank it into History.</span></div>
   <div class="sect"><h2>Warm-up</h2><span class="meta">~4m</span></div>
   <div class="warm" id="warmlist"></div>
   <div class="sect"><h2>Workout</h2><span class="meta"><span id="setmeta"></span><span class="saveind" id="saveInd">saved ✓</span></span></div>
+  <div class="sessest" id="sessEst"></div>
   <div class="list" id="exlist"></div>
   <div class="actionrow">
     <button class="ghost" id="copySession" title="Copy shorthand log">📋</button>
@@ -413,6 +450,7 @@
     <div class="sorelbl">Joint</div>
     <div class="chips" id="soreJoint">
       <div class="tchip" data-v="shoulder">shoulder</div>
+      <div class="tchip" data-v="elbow">elbow</div>
       <div class="tchip" data-v="knee">knee</div>
       <div class="tchip" data-v="ankle">ankle</div>
       <div class="tchip" data-v="back">back</div>
@@ -430,8 +468,11 @@
 
 <!-- ============ TRENDS ============ -->
 <div class="page" id="pg-trends">
+  <div id="b0Strip"></div>
   <div class="sect"><h2>Health</h2><span class="meta" style="color:var(--ok);font-family:var(--mono);font-size:11px">GOALS FIRST</span></div>
   <div id="healthCards"></div>
+  <div class="sect"><h2>Measurements</h2><span class="meta" style="color:var(--cyan);font-family:var(--mono);font-size:11px">RATIO BOARD</span></div>
+  <div id="ratioBoard"></div>
   <div class="sect"><h2>Shoulder-flag correlation</h2><span class="meta" style="color:var(--muted2);font-family:var(--mono);font-size:11px">72 H WINDOW</span></div>
   <div id="soreCorr"></div>
   <div class="sect"><h2>Personal records</h2><span class="meta" style="color:var(--amber);font-family:var(--mono);font-size:11px">EPLEY e1RM</span></div>
@@ -459,13 +500,34 @@
   <div class="sect"><h2>Weekly schedule</h2><span class="meta" style="color:var(--muted2);font-size:11px">tap a day to change</span></div>
   <div id="schedEditor" class="schedgrid"></div>
   <div class="footnote">Fixed weekday plan. Train opens on today's session; you can still pick any day from the tabs, and a missed day is just skipped — no penalty.</div>
+  <div class="sect"><h2>Body measurements</h2><span class="meta" style="color:var(--muted2);font-size:11px">inches · one decimal</span></div>
+  <div class="olform" id="measForm">
+    <label class="f full"><span>Date</span><input type="date" id="mDate"></label>
+    <label class="f full"><span>Shoulder <span style="color:var(--muted2)">(circumference)</span></span><input type="number" id="mShoulder" step="0.1" inputmode="decimal" placeholder="—"></label>
+    <label class="f full"><span>Waist</span><input type="number" id="mWaist" step="0.1" inputmode="decimal" placeholder="—"></label>
+    <label class="f full"><span>Left arm <span style="color:var(--muted2)">(flexed)</span></span><input type="number" id="mArmL" step="0.1" inputmode="decimal" placeholder="—"></label>
+    <label class="f full"><span>Right arm <span style="color:var(--muted2)">(flexed)</span></span><input type="number" id="mArmR" step="0.1" inputmode="decimal" placeholder="—"></label>
+    <div class="olnote">Leave a field blank to keep its last value — you can log just the arms.</div>
+    <button class="cta" id="mSave" style="width:100%;margin-top:12px">Save measurements</button>
+    <div id="mRecent"></div>
+  </div>
+  <div class="sect"><h2>Benched exercises</h2><span class="meta" style="color:var(--muted2);font-size:11px">kept out of rotation</span></div>
+  <div class="olform" id="benchForm">
+    <div id="benchList"></div>
+    <label class="f full"><span>Bench another exercise</span><input type="text" id="bAdd" placeholder="exact name, e.g. Lat Pulldown"></label>
+    <div class="olnote">Benched movements are dropped from every template and every swap list. Nothing is deleted — their history stays in Log and Trends, and un-benching puts them back (the 21-day stale-load rule decides whether the old load prefills or asks for a recalibration).</div>
+    <button class="cta" id="bAddBtn" style="width:100%;margin-top:12px">Bench it</button>
+  </div>
   <div class="sect"><h2>Profile & rules</h2></div>
   <div class="prof">
     <span class="tagline">Health-first training</span> — goal order: <b>health → cardio → joints → agility → aesthetics</b>. The V-taper (lateral delts · upper chest · lats · arms) still matters — just last, not first.<br><br>
     <b>Mission:</b> preserve + build muscle in a physician-supervised GLP-1 deficit (protein ~130–165 g/day is the lever), with cardiovascular health and pain-free joints ranking above the look.<br>
-    <b>Shoulder — chronic, managed ceiling:</b> not an injury in rehab, not on a re-entry ladder to "full." It's a permanent limitation. The payback is <b>delayed 24–72 h</b>, so the pre-committed weekly pressing cap — not in-session pain — is the real guardrail.<br>
+    <b>Bodyweight:</b> ~180 lb (2026-09-09).<br>
+    <b>Block 0 “Show Up”:</b> <span id="vBlock0">—</span><br>
+    <b>Aesthetics — current priority:</b> Arms are the priority — direct biceps/triceps 3×/week.<br>
+    <b>Shoulder — chronic, managed ceiling:</b> not an injury in rehab, not on a re-entry ladder to "full." It's a permanent limitation. The payback is <b>delayed 24–72 h</b>, so the pre-committed weekly pressing cap — not in-session pain — is the real guardrail. <b>No overhead triceps extensions.</b><br>
     <b>Knee — flagged, undiagnosed:</b> pain after mild activity. <b>Low-impact only</b> until evaluated; running is held.<br>
-    <b>Guardrails:</b> shoulder → neutral-grip/landmine pressing + capped weekly pressing volume · knee → low-impact only, no running/impact · back → anterior-load + chest-supported · R ankle (Broström) → heel-elevate, cautious single-leg.<br>
+    <b>Guardrails:</b> shoulder → neutral-grip/landmine pressing + capped weekly pressing volume, no overhead triceps extensions · knee → low-impact only, no running/impact · back → anterior-load + chest-supported · R ankle (Broström) → heel-elevate, cautious single-leg.<br>
     <b>Action items:</b> ⏳ VA PT evaluation for knees.<br>
     <b>Progression (§8):</b> top of range on all sets at ≤ target RPE → +5 upper / +5–10 lower · reps hit but RPE high → hold · missed / spiking → back off · 2+ bad sessions → deload · load older than 21 days → recalibrate.<br>
     <b>RPE ruler:</b> 10 = failure · 9 = 1 RIR · 8 = 2 RIR · 7 = 3 RIR · 6 = 4 RIR.
@@ -489,7 +551,7 @@
    Durable core: storage, progression engine, math. No model in the loop.
    AI layer: you copy shorthand out to Claude; Claude never holds the data. */
 
-const APP = "qbranch", SCHEMA = 4, DB_KEY = "qbranch:v1";
+const APP = "qbranch", SCHEMA = 6, DB_KEY = "qbranch:v1";
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const todayISO = () => new Date().toLocaleDateString("en-CA");
@@ -501,54 +563,71 @@ const todayISO = () => new Date().toLocaleDateString("en-CA");
    RPE caps, volume and accessory selection shift block to block. */
 const BASE = {
   A:{focus:"Push / Pull emphasis",
-    warm:[["Row or stair master, easy","3 min"],["Arm + shoulder circles, both ways","×10 each"],["Bodyweight squats","×10"]],
+    warm:[["Row or stair master, easy","3 min"],["Arm + shoulder circles, both ways","×10 each"],
+      ["Face Pull, band","×15",{name:"Face Pull",implement:"band"}],
+      ["Hindu Push-up, slow","×6",{name:"Hindu Push-up",implement:"bw",pressing:true}],
+      ["Bodyweight squats","×10"]],
     ex:[
-      {name:"Goblet Squat",tag:"Quads · Legs",muscle:"Legs",sets:3,lo:8,hi:10,rpe:"6–7",rpeMax:7,rest:90,mode:"wt",inc:5,
-       cues:"<b>Heel-elevate</b> if the ankle limits depth. Tall chest, controlled descent — own the bottom.",sub:"Leg press"},
-      {name:"DB Incline Press",pressing:true,tag:"Upper Chest",muscle:"Chest",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
-       cues:"Elbows ~45°, <b>not flared</b> — shoulder-friendly. Full but pain-free range.",sub:"Machine chest press"},
-      {name:"Chest-Supported Row",tag:"Back · Lats",muscle:"Back",sets:3,lo:10,hi:12,rpe:"7",rpeMax:7,rest:75,mode:"wt",inc:5,
-       cues:"Chest on the bench <b>spares your low back</b>. Drive elbows back, squeeze the blades.",sub:"Seated cable row"},
-      {name:"DB Lateral Raise",pressing:true,tag:"Side Delts",muscle:"Side Delts",sets:3,lo:12,hi:15,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
-       cues:"Light — <b>no swing</b>. Lead with the elbows. This is your taper-builder.",sub:"Cable lateral raise"},
-      {name:"Face Pull",tag:"Rear Delts · Shoulder health",muscle:"Rear Delts",sets:2,lo:15,hi:15,rpe:"6",rpeMax:6,rest:45,mode:"wt",inc:5,ss:"A",
-       cues:"Pull to your eyes, rotate knuckles back. <b>Shoulder insurance.</b>",sub:"Band pull-apart"},
-      {name:"Plank",tag:"Core · Anti-extension",muscle:"Core",sets:3,lo:30,hi:45,rpe:"—",rpeMax:null,rest:60,mode:"time",inc:0,ss:"A",
-       cues:"Brace hard, ribs down, glutes tight — <b>protects the back</b>.",sub:"Dead bug 3×8/side"},
+      {name:"Goblet Squat",tag:"Quads · Legs",muscle:"Legs",implement:"db",sets:3,lo:8,hi:10,rpe:"6–7",rpeMax:7,rest:90,mode:"wt",inc:5,
+       cues:"<b>Heel-elevate</b> if the ankle limits depth. Tall chest, controlled descent — own the bottom.",sub:"Leg press",subImplement:"machine"},
+      {name:"DB Incline Press",pressing:true,tag:"Upper Chest",muscle:"Chest",implement:"db",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
+       cues:"Elbows ~45°, <b>not flared</b> — shoulder-friendly. Full but pain-free range.",sub:"Machine chest press",subImplement:"machine"},
+      {name:"Chest-Supported Row",tag:"Back · Lats",muscle:"Back",implement:"db",sets:3,lo:10,hi:12,rpe:"7",rpeMax:7,rest:75,mode:"wt",inc:5,
+       cues:"Chest on the bench <b>spares your low back</b>. Drive elbows back, squeeze the blades.",sub:"Seated cable row",subImplement:"cable"},
+      {name:"DB Lateral Raise",pressing:true,tag:"Side Delts",muscle:"Side Delts",implement:"db",sets:3,lo:12,hi:15,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
+       cues:"Light — <b>no swing</b>. Lead with the elbows. This is your taper-builder.",sub:"Cable lateral raise",subImplement:"cable"},
+      {name:"Plank",tag:"Core · Anti-extension",muscle:"Core",implement:"bw",noSS:true,sets:2,lo:30,hi:45,rpe:"—",rpeMax:null,rest:60,mode:"time",inc:0,
+       cues:"Brace hard, ribs down, glutes tight — <b>protects the back</b>.",sub:"Dead bug 3×8/side",subImplement:"bw"},
+      {name:"Incline DB Curl",tag:"Arms · Biceps",muscle:"Arms",implement:"db",sets:3,lo:10,hi:12,rpe:"8",rpeMax:8,rest:45,mode:"wt",inc:5,ss:"B",pressing:false,overhead:false,
+       cues:"Bench at ~45°, upper arms <b>behind the torso</b> — that stretch is the whole point. No swing.",sub:"Seated DB Curl"},
+      {name:"Lying DB Triceps Extension",tag:"Arms · Triceps",muscle:"Arms",implement:"db",sets:3,lo:10,hi:12,rpe:"8",rpeMax:8,rest:45,mode:"wt",inc:5,ss:"B",pressing:false,overhead:false,
+       cues:"Flat on the bench, <b>upper arms vertical</b>. Lower toward the forehead — the arms never travel overhead.",sub:"EZ-bar Skullcrusher",subImplement:"bar"},
     ]},
   B:{focus:"Legs / Pull emphasis",
-    warm:[["Row or stair master, easy","3 min"],["Leg swings + ankle circles","×10/side"],["Bodyweight split squats","×8/side"]],
+    warm:[["Row or stair master, easy","3 min"],["Leg swings + ankle circles","×10/side"],
+      ["Face Pull, band","×15",{name:"Face Pull",implement:"band"}],
+      ["Hindu Push-up, slow","×6",{name:"Hindu Push-up",implement:"bw",pressing:true}],
+      ["Bodyweight split squats","×8/side"]],
     ex:[
-      {name:"Leg Press",tag:"Quads · Glutes",muscle:"Legs",sets:3,lo:10,hi:12,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:10,
-       cues:"Back <b>flat on the pad</b> — don't chase depth that tucks your hips. Feet mid-platform.",sub:"Goblet squat"},
-      {name:"DB Split Squat",tag:"Single-leg · Ankle-aware",muscle:"Legs",sets:2,lo:8,hi:10,rpe:"6–7",rpeMax:7,rest:75,mode:"wt",inc:5,
+      {name:"Leg Press",tag:"Quads · Glutes",muscle:"Legs",implement:"machine",sets:3,lo:10,hi:12,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:10,
+       cues:"Back <b>flat on the pad</b> — don't chase depth that tucks your hips. Feet mid-platform.",sub:"Goblet squat",subImplement:"db"},
+      {name:"DB Split Squat",tag:"Single-leg · Ankle-aware",muscle:"Legs",implement:"db",sets:2,lo:8,hi:10,rpe:"6–7",rpeMax:7,rest:75,mode:"wt",inc:5,
        cues:"Short-to-moderate stance; <b>progress range cautiously</b> on the right ankle. Hold DBs at sides.",sub:"Rear-foot-elevated split squat (later)"},
-      {name:"Lat Pulldown",tag:"Lats · Width",muscle:"Back",sets:3,lo:10,hi:12,rpe:"7",rpeMax:7,rest:75,mode:"wt",inc:5,
-       cues:"Medium <b>neutral or underhand</b> grip if shoulders bark. Pull to collarbone, long stretch up top.",sub:"Assisted pull-up"},
-      {name:"Seated Cable Row",tag:"Mid-back",muscle:"Back",sets:3,lo:10,hi:12,rpe:"7",rpeMax:7,rest:75,mode:"wt",inc:5,
-       cues:"Chest tall, <b>no torso heave</b> — the low back stays out of it.",sub:"Chest-supported row"},
-      {name:"DB Hammer Curl",tag:"Arms · Brachialis",muscle:"Arms",sets:2,lo:10,hi:12,rpe:"8",rpeMax:8,rest:60,mode:"wt",inc:5,ss:"A",
-       cues:"Neutral grip is <b>elbow-friendly</b>. No swing; squeeze at the top.",sub:"Cable rope curl"},
-      {name:"Dead Bug",tag:"Core · Anti-extension",muscle:"Core",sets:3,lo:8,hi:8,rpe:"—",rpeMax:null,rest:45,mode:"time",inc:0,ss:"A",
-       cues:"8/side, slow. <b>Low back glued to the floor</b> — exhale as the limbs extend.",sub:"Pallof press"},
+      {name:"Straight-Arm Cable Pulldown",tag:"Lats · Width",muscle:"Back",implement:"cable",sets:3,lo:10,hi:12,rpe:"7",rpeMax:7,rest:75,mode:"wt",inc:5,
+       cues:"Hinge slightly, <b>elbows soft and fixed</b> — sweep the bar to your thighs. All lat, no biceps, and the shoulder never loads overhead.",sub:"DB Pullover",subImplement:"db"},
+      {name:"Seated Cable Row",tag:"Mid-back",muscle:"Back",implement:"cable",sets:3,lo:10,hi:12,rpe:"7",rpeMax:7,rest:75,mode:"wt",inc:5,
+       cues:"Chest tall, <b>no torso heave</b> — the low back stays out of it.",sub:"Chest-supported row",subImplement:"db"},
+      {name:"DB Hammer Curl",tag:"Arms · Brachialis",muscle:"Arms",implement:"db",sets:2,lo:10,hi:12,rpe:"8",rpeMax:8,rest:60,mode:"wt",inc:5,pressing:false,overhead:false,
+       cues:"Neutral grip is <b>elbow-friendly</b>. No swing; squeeze at the top.",sub:"Cable rope curl",subImplement:"cable"},
+      {name:"Dead Bug",tag:"Core · Anti-extension",muscle:"Core",implement:"bw",noSS:true,sets:2,lo:8,hi:8,rpe:"—",rpeMax:null,rest:45,mode:"time",inc:0,
+       cues:"8/side, slow. <b>Low back glued to the floor</b> — exhale as the limbs extend.",sub:"Pallof press",subImplement:"cable"},
+      {name:"Hammer Curl",tag:"Arms · Biceps · Brachialis",muscle:"Arms",implement:"db",sets:3,lo:10,hi:12,rpe:"8",rpeMax:8,rest:45,mode:"wt",inc:5,ss:"B",pressing:false,overhead:false,
+       cues:"Neutral grip is <b>elbow-friendly</b>. Squeeze at the top, control the way down — no swing.",sub:"Cross-body Hammer Curl"},
+      {name:"Lying DB Triceps Extension",tag:"Arms · Triceps",muscle:"Arms",implement:"db",sets:3,lo:10,hi:12,rpe:"8",rpeMax:8,rest:45,mode:"wt",inc:5,ss:"B",pressing:false,overhead:false,
+       cues:"Flat on the bench, <b>upper arms vertical</b>. Lower toward the forehead — the arms never travel overhead.",sub:"EZ-bar Skullcrusher",subImplement:"bar"},
     ]},
   C:{focus:"Push / Delts emphasis",
-    warm:[["Row or stair master, easy","3 min"],["Shoulder circles + arm swings","×10 each"],["Wall slides","×10"]],
+    warm:[["Row or stair master, easy","3 min"],["Shoulder circles + arm swings","×10 each"],
+      ["Face Pull, band","×15",{name:"Face Pull",implement:"band"}],
+      ["Hindu Push-up, slow","×6",{name:"Hindu Push-up",implement:"bw",pressing:true}],
+      ["Wall slides","×10"]],
     ex:[
-      {name:"Landmine Press",pressing:true,tag:"Shoulders · Shoulder-safe",muscle:"Shoulders",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
-       cues:"The <b>angled path is the point</b> — press up-and-in, half-kneeling if the back wants support.",sub:"Neutral-grip DB shoulder press"},
-      {name:"Flat DB Press",pressing:true,tag:"Chest",muscle:"Chest",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
-       cues:"Elbows ~45°, feet planted. <b>Pain-free range beats full range.</b>",sub:"Machine chest press"},
-      {name:"Arnold Press",pressing:true,tag:"Shoulders · Delts",muscle:"Shoulders",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
-       cues:"Start palms-in at the chin, <b>rotate to palms-out</b> as you press up. Keep the turn smooth and the range <b>pain-free</b> — ease off the bottom rotation if the shoulder barks.",sub:"Neutral-grip DB shoulder press"},
-      {name:"Cable Lateral Raise",pressing:true,tag:"Side Delts",muscle:"Side Delts",sets:3,lo:12,hi:15,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
-       cues:"Constant tension the DBs can't give. <b>Lead with the elbow</b>, no shrug.",sub:"DB lateral raise"},
-      {name:"Rope Pushdown",tag:"Arms · Triceps",muscle:"Arms",sets:2,lo:10,hi:12,rpe:"8",rpeMax:8,rest:60,mode:"wt",inc:5,
-       cues:"Elbows pinned; <b>spread the rope</b> at the bottom.",sub:"DB overhead extension"},
-      {name:"Face Pull",tag:"Rear Delts · Shoulder health",muscle:"Rear Delts",sets:2,lo:15,hi:15,rpe:"6",rpeMax:6,rest:45,mode:"wt",inc:5,ss:"A",
-       cues:"Pull to your eyes, rotate knuckles back. <b>Shoulder insurance, every push day.</b>",sub:"Band pull-apart"},
-      {name:"Pallof Press",tag:"Core · Anti-rotation",muscle:"Core",sets:3,lo:8,hi:8,rpe:"—",rpeMax:null,rest:45,mode:"time",inc:0,ss:"A",
-       cues:"8/side, 2s hold pressed out. <b>Hips and shoulders square</b> — resist the twist.",sub:"Dead bug"},
+      {name:"Landmine Press",pressing:true,tag:"Shoulders · Shoulder-safe",muscle:"Shoulders",implement:"bar",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
+       cues:"The <b>angled path is the point</b> — press up-and-in, half-kneeling if the back wants support.",sub:"Neutral-grip DB shoulder press",subImplement:"db"},
+      {name:"Flat DB Press",pressing:true,tag:"Chest",muscle:"Chest",implement:"db",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
+       cues:"Elbows ~45°, feet planted. <b>Pain-free range beats full range.</b>",sub:"Machine chest press",subImplement:"machine"},
+      {name:"Arnold Press",pressing:true,tag:"Shoulders · Delts",muscle:"Shoulders",implement:"db",sets:3,lo:8,hi:10,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:5,
+       cues:"Seated, back supported. Start palms-in at collarbone, <b>rotate through the press</b>, stop short of back-and-down flare. If it pinches, cut the rotation — becomes a neutral-grip DB press, same slot, same load.",sub:"Neutral-grip DB shoulder press"},
+      {name:"Cable Lateral Raise",pressing:true,tag:"Side Delts",muscle:"Side Delts",implement:"cable",sets:3,lo:12,hi:15,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
+       cues:"Constant tension the DBs can't give. <b>Lead with the elbow</b>, no shrug.",sub:"DB lateral raise",subImplement:"db"},
+      {name:"Rope Pushdown",tag:"Arms · Triceps",muscle:"Arms",implement:"cable",sets:2,lo:10,hi:12,rpe:"8",rpeMax:8,rest:60,mode:"wt",inc:5,pressing:false,overhead:false,
+       cues:"Elbows pinned; <b>spread the rope</b> at the bottom.",sub:"Straight-bar Pushdown"},
+      {name:"Pallof Press",tag:"Core · Anti-rotation",muscle:"Core",implement:"cable",noSS:true,sets:2,lo:8,hi:8,rpe:"—",rpeMax:null,rest:45,mode:"time",inc:0,
+       cues:"8/side, 2s hold pressed out. <b>Hips and shoulders square</b> — resist the twist.",sub:"Dead bug",subImplement:"bw"},
+      {name:"Cable Curl (Bayesian)",tag:"Arms · Biceps",muscle:"Arms",implement:"cable",sets:3,lo:12,hi:15,rpe:"8",rpeMax:8,rest:45,mode:"wt",inc:5,ss:"B",pressing:false,overhead:false,
+       cues:"Face away from a low pulley, arm <b>behind the body line</b> — constant tension right through the stretch.",sub:"Cable Curl, standard"},
+      {name:"Cable Kickback",tag:"Arms · Triceps",muscle:"Arms",implement:"cable",sets:3,lo:12,hi:15,rpe:"8",rpeMax:8,rest:45,mode:"wt",inc:5,ss:"B",pressing:false,overhead:false,
+       cues:"Hinge slightly, <b>upper arm locked parallel</b> to the floor. Squeeze straight back — the elbow never rises past the shoulder.",sub:"DB Kickback",subImplement:"db"},
     ]}
 };
 
@@ -562,17 +641,127 @@ const EXPRESS = {
   focus:"Express · busy-day full-body",
   warm:[["March in place or stairs, easy","2 min"],["Arm + hip circles","×10 each"]],
   ex:[
-    {name:"KB Goblet Squat",tag:"Legs · KB",muscle:"Legs",sets:3,lo:10,hi:15,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
+    {name:"KB Goblet Squat",tag:"Legs · KB",muscle:"Legs",implement:"kb",sets:3,lo:10,hi:15,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
      cues:"Hold the 35 at your chest, tall spine. <b>Heel-elevate</b> if the ankle limits depth.",sub:"Bodyweight squat"},
-    {name:"Push-up",pressing:true,tag:"Push · Bodyweight",muscle:"Chest",sets:3,lo:8,hi:15,rpe:"8",rpeMax:8,rest:60,mode:"wt",inc:0,
+    {name:"Push-up",pressing:true,tag:"Push · Bodyweight",muscle:"Chest",implement:"bw",sets:3,lo:8,hi:15,rpe:"8",rpeMax:8,rest:60,mode:"wt",inc:0,
      cues:"Ribs down, body in one line. <b>Hands to a couch or counter</b> to scale — keep the reps honest.",sub:"Incline push-up"},
-    {name:"KB Single-Arm Row",tag:"Pull · KB",muscle:"Back",sets:3,lo:10,hi:12,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
+    {name:"KB Single-Arm Row",tag:"Pull · KB",muscle:"Back",implement:"kb",sets:3,lo:10,hi:12,rpe:"7–8",rpeMax:8,rest:60,mode:"wt",inc:5,
      cues:"<b>Free hand braced on your thigh</b> — takes the low back out of it. 10–12/side. Drive the elbow back, squeeze.",sub:"Table row"},
-    {name:"Reverse Lunge",tag:"Single-leg · Ankle-aware",muscle:"Legs",sets:2,lo:8,hi:12,rpe:"7",rpeMax:7,rest:60,mode:"wt",inc:0,
+    {name:"Reverse Lunge",tag:"Single-leg · Ankle-aware",muscle:"Legs",implement:"bw",sets:2,lo:8,hi:12,rpe:"7",rpeMax:7,rest:60,mode:"wt",inc:0,
      cues:"Step <b>back, not forward</b> — kinder to the right ankle. 8–12/side; hold the KB at your chest to load it up.",sub:"Bodyweight squat"},
-    {name:"Plank",tag:"Core · Anti-extension",muscle:"Core",sets:3,lo:30,hi:45,rpe:"—",rpeMax:null,rest:45,mode:"time",inc:0,
+    {name:"Plank",tag:"Core · Anti-extension",muscle:"Core",implement:"bw",noSS:true,sets:3,lo:30,hi:45,rpe:"—",rpeMax:null,rest:45,mode:"time",inc:0,
      cues:"Brace hard, ribs down, glutes tight — <b>protects the back</b>.",sub:"Dead bug"},
   ]
+};
+
+/* ---------- Change 11 — Hindu push-ups ------------------------------------
+   Two roles, one movement. Default role: a warm-up item (×6, slow) in every
+   lifting session — warm-ups log no sets, so it is automatically exempt from
+   the weekly pressing counter while still carrying `pressing:true` so the
+   delayed-soreness flag can name it. Second role: on a home day it takes the
+   chest slot outright at 3×8–12, and in THAT role it is logged, so it does
+   count against the cap like any other press. */
+const HINDU_CUES = "Cobra-lite: hips low, elbows soft, <b>stop before the low back pinches</b>. If shoulder or back complains, drop to the pike-to-plank half rep.";
+const HINDU_PUSHUP = {name:"Hindu Push-up",pressing:true,tag:"Chest",muscle:"Chest",implement:"bw",
+  sets:3,lo:8,hi:12,rpe:"7",rpeMax:7,rest:90,mode:"wt",inc:0,cues:HINDU_CUES,sub:"Incline push-up",subImplement:"bw"};
+/* Home-day substitutions: no rack, no cables. Applied as a 1-for-1 def swap so
+   the session's logged rows stay index-aligned — nothing entered is lost. */
+const HOME_SWAPS = { "DB Incline Press": HINDU_PUSHUP };
+function homeSwapDef(d){
+  const rep=HOME_SWAPS[d&&d.name];
+  if(!rep) return d;
+  // the slot's own shape wins over the replacement's: set count, rest, RPE cap
+  // and Block 0's flat-load rule all belong to the slot, not to the movement
+  return {...rep, sets:d.sets, rest:d.rest, ss:d.ss, noSS:d.noSS,
+    rpe:d.rpe, rpeMax:d.rpeMax, flat:d.flat, homeSwapped:true, from:d.name};
+}
+function applyHome(defs, home){ return home ? (defs||[]).map(homeSwapDef) : defs; }
+
+/* ---------- Change 12 — benched exercises ----------------------------------
+   A movement you've decided you're done with. Benched names are filtered out of
+   every generated template and out of every substitution list, but nothing is
+   deleted: their logged history stays in Log and Trends exactly as it was.
+   Un-benching restores them to rotation — the stale-load rule (Change 7) then
+   decides whether the old load prefills or asks for a RECALIBRATE. */
+const DEFAULT_BENCHED = ["Lat Pulldown"];
+function benchedList(){ return (typeof db!=="undefined" && db && Array.isArray(db.benched)) ? db.benched : []; }
+function isBenched(n){ const k=String(n||"").toLowerCase(); return benchedList().some(x=>String(x).toLowerCase()===k); }
+/* The swap alternate actually offered for a def — "" once it's been benched. */
+function subFor(def){ const a=altName(def); return (a && !isBenched(a)) ? a : ""; }
+
+/* ---------- Change 10 — superset rules, resolved at render time -------------
+   Groupings are no longer hard-coded: `ss` is a proposal, and these two rules
+   decide whether it survives.
+     1. Core is never supersetted. Anything tagged Core carries noSS and always
+        renders as its own standalone card.
+     2. Same-implement pairing only. You can't superset a cable station with a
+        mat — the walk between them IS the rest, which defeats the point. */
+function canSuperset(a,b){
+  if(!a||!b) return false;
+  if(a.muscle==="Core"||b.muscle==="Core"||a.noSS||b.noSS) return false;
+  const ia=a.implement||"", ib=b.implement||"";
+  return !!ia && ia===ib;
+}
+function resolveSupersets(defs){
+  const out=(defs||[]).map(d=>({...d}));
+  // rule 1 — core is pulled out of every group before anything else is judged
+  out.forEach(d=>{ if(d.muscle==="Core"){ d.noSS=true; } if(d.noSS) d.ss=null; });
+  // rule 2 — a group survives only as a real pair sharing one implement
+  const groups={};
+  out.forEach((d,i)=>{ if(d.ss) (groups[d.ss]||(groups[d.ss]=[])).push(i); });
+  Object.keys(groups).forEach(k=>{
+    const idx=groups[k], ok = idx.length>=2 && idx.every(i=>canSuperset(out[idx[0]], out[i]));
+    if(!ok) idx.forEach(i=>{ out[i].ss=null; });
+  });
+  return out;
+}
+/* One template day, run through every render-time rule: benched removed, home
+   substitutions applied, supersets resolved. Every template path goes through
+   this so no screen can disagree with another about what today actually is. */
+function finalizeDay(day, home){
+  return {focus:day.focus, warm:day.warm,
+    ex:resolveSupersets(applyHome((day.ex||[]).filter(d=>!isBenched(d.name)), home))};
+}
+
+/* ---------- Change 13 — Block 0 "Show Up" ----------------------------------
+   Ahead of the A/B/C program sits a block whose only variable is attendance:
+   two four-card templates, six exercises total, every working set at RPE 6,
+   ~25 minutes. No progression math, no arm finisher, no new pressing volume —
+   exactly 2 pressing sets a session, which is 6 a week, which is the cap. */
+const BLOCK0_GATE = 6;   // completed sessions before Block 1 unlocks — cumulative, never reset
+const BLOCK0_WARM = [
+  ["Bike, easy","2 min"],
+  ["Band Pull-apart","×15",{name:"Band Pull-apart",implement:"band"}],
+  ["Face Pull, band","×15",{name:"Face Pull",implement:"band"}],
+  ["Hindu Push-up, slow","×6",{name:"Hindu Push-up",implement:"bw",pressing:true,cues:HINDU_CUES}],
+  ["Bodyweight Goblet Squat","×10"],
+];
+const ARNOLD_CUES = "Seated, back supported. Start palms-in at collarbone, <b>rotate through the press</b>, stop short of back-and-down flare. If it pinches, cut the rotation — becomes a neutral-grip DB press, same slot, same load.";
+const BLOCK0 = {
+  A:{focus:"Show Up · A — squat / press / row",
+    warm:BLOCK0_WARM,
+    ex:[
+      {name:"Goblet Squat",tag:"Quads · Legs",muscle:"Legs",implement:"db",flat:true,sets:2,lo:10,hi:10,rpe:"6",rpeMax:6,rest:75,mode:"wt",inc:5,
+       cues:"<b>Heel-elevate</b> if the ankle limits depth. Easy weight — this block is about turning up, not testing.",sub:"Leg press",subImplement:"machine"},
+      {name:"DB Incline Press",pressing:true,tag:"Upper Chest",muscle:"Chest",implement:"db",flat:true,sets:2,lo:10,hi:10,rpe:"6",rpeMax:6,rest:75,mode:"wt",inc:5,
+       cues:"Elbows ~45°, <b>not flared</b>. Two sets, four reps in the tank — that's the whole job.",sub:"Machine chest press",subImplement:"machine"},
+      {name:"Chest-Supported Row",tag:"Back · Lats",muscle:"Back",implement:"db",flat:true,sets:2,lo:12,hi:12,rpe:"6",rpeMax:6,rest:60,mode:"wt",inc:5,
+       cues:"Chest on the bench <b>spares your low back</b>. Drive elbows back, squeeze the blades.",sub:"Seated cable row",subImplement:"cable"},
+      {name:"Plank",tag:"Core · Anti-extension",muscle:"Core",implement:"bw",noSS:true,flat:true,sets:2,lo:30,hi:30,rpe:"—",rpeMax:null,rest:45,mode:"time",inc:0,
+       cues:"Brace hard, ribs down, glutes tight — <b>protects the back</b>.",sub:"Dead bug",subImplement:"bw"},
+    ]},
+  B:{focus:"Show Up · B — squat / press / pulldown",
+    warm:BLOCK0_WARM,
+    ex:[
+      {name:"Goblet Squat",tag:"Quads · Legs",muscle:"Legs",implement:"db",flat:true,sets:2,lo:10,hi:10,rpe:"6",rpeMax:6,rest:75,mode:"wt",inc:5,
+       cues:"<b>Heel-elevate</b> if the ankle limits depth. Easy weight — this block is about turning up, not testing.",sub:"Leg press",subImplement:"machine"},
+      {name:"Arnold Press",pressing:true,tag:"Shoulders · Delts",muscle:"Shoulders",implement:"db",flat:true,sets:2,lo:10,hi:10,rpe:"6",rpeMax:6,rest:75,mode:"wt",inc:5,
+       cues:ARNOLD_CUES,sub:"Neutral-grip DB shoulder press",subImplement:"db"},
+      {name:"Straight-Arm Cable Pulldown",tag:"Lats · Width",muscle:"Back",implement:"cable",flat:true,sets:2,lo:12,hi:12,rpe:"6",rpeMax:6,rest:60,mode:"wt",inc:5,
+       cues:"Hinge slightly, <b>elbows soft and fixed</b> — sweep the bar to your thighs. All lat, and the shoulder never loads overhead.",sub:"DB Pullover",subImplement:"db"},
+      {name:"Pallof Press",tag:"Core · Anti-rotation",muscle:"Core",implement:"cable",noSS:true,flat:true,sets:2,lo:10,hi:10,rpe:"—",rpeMax:null,rest:45,mode:"time",inc:0,
+       cues:"10/side, 2s hold pressed out. <b>Hips and shoulders square</b> — resist the twist.",sub:"Dead bug",subImplement:"bw"},
+    ]},
 };
 
 /* ================= BLOCK ENGINE — deterministic periodization =================
@@ -584,6 +773,8 @@ const EXPRESS = {
    model needed. `sessions` = weeks × 3 training days = the auto-advance trigger. */
 const ACCESSORY = new Set(["Side Delts","Rear Delts","Arms","Core"]);
 const BLOCKS = [
+  {name:"Show Up",       focus:"Attendance, nothing else",weeks:2, sessions:BLOCK0_GATE, dReps:0, dRpe:0, dSets:0, rotate:0, block0:true,
+   note:"Two short templates, four cards each, flat loads, RPE 6. The only variable is showing up. Block 1 unlocks after 6 completed sessions — and a missed week doesn't reset the count."},
   {name:"Re-entry",      focus:"Rebuild the groove",   weeks:4, sessions:12, dReps:0,  dRpe:0,  dSets:0,  rotate:0,
    note:"Own every rep, 2–3 in the tank. Re-groove the patterns before we push."},
   {name:"Accumulation",  focus:"Volume & work capacity",weeks:4, sessions:12, dReps:2,  dRpe:1,  dSets:1,  rotate:1,
@@ -593,8 +784,17 @@ const BLOCKS = [
   {name:"Deload",        focus:"Recover & prime",       weeks:1, sessions:3,  dReps:0,  dRpe:-2, dSets:-1, rotate:0,
    note:"Back off on purpose. Move well, recover, arrive fresh for the next build."},
 ];
-// after the first pass through the arc, loop the build phases (skip Re-entry)
-function nextBlockIndex(i){ return i+1 < BLOCKS.length ? i+1 : 1; }
+// after the first pass through the arc, loop the build phases (Block 0 and
+// Re-entry are install-time only — you never get sent back to them)
+function nextBlockIndex(i){ return i+1 < BLOCKS.length ? i+1 : 2; }
+function isBlock0(i){ const b=BLOCKS[i]; return !!(b && b.block0); }
+/* Block 0's two templates alternate A-B-A / B-A-B. The weekday engine still
+   owns WHICH DAYS you lift; the rotation owns which of the two you get, driven
+   off the cumulative session count so a missed week just picks up where it
+   left off rather than resetting the pattern. */
+function block0Day(){ return ["A","B"][(db.program.done||0)%2]; }
+function programDays(){ return Object.keys(PROGRAM); }
+function effectiveDay(day){ return isBlock0(db.program.i) ? block0Day() : (PROGRAM[day] ? day : block0Day()); }
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
 /* Transform one BASE exercise for a block. Returns a fresh def; on `rotate`
    an accessory becomes its alternate (and its `sub` flips back to the anchor
@@ -610,14 +810,20 @@ function applyBlockToEx(d, blk){
   if(isAcc && blk.dSets) out.sets=clamp(d.sets+blk.dSets, 1, 5);
   if(isAcc && blk.rotate){
     const alt=altName(d);
-    if(alt){ out.name=alt; out.sub=d.name; out.rotated=true; }  // swap in the alternate; swap-back points home
+    if(alt){ out.name=alt; out.sub=d.name; out.rotated=true;     // swap in the alternate; swap-back points home
+      // what you'd actually be holding changes too — the superset resolver reads it
+      if(d.subImplement){ out.implement=d.subImplement; out.subImplement=d.implement; } }
   }
   return out;
 }
-function blockProgram(bi){
+function blockProgram(bi, home){
   const blk=BLOCKS[bi]||BLOCKS[0], out={};
+  // Block 0 has its own two templates and takes no block transform at all —
+  // flat loads are the point, so there is nothing to shift.
+  if(blk.block0){ ["A","B"].forEach(day=>{ out[day]=finalizeDay(BLOCK0[day], home); }); return out; }
   ["A","B","C"].forEach(day=>{
-    out[day]={focus:BASE[day].focus, warm:BASE[day].warm, ex:BASE[day].ex.map(d=>applyBlockToEx(d,blk))};
+    out[day]=finalizeDay({focus:BASE[day].focus, warm:BASE[day].warm,
+      ex:BASE[day].ex.map(d=>applyBlockToEx(d,blk))}, home);
   });
   return out;
 }
@@ -643,11 +849,11 @@ function evaluateBlock(bi){
 }
 function blockReviewText(r){
   const to=BLOCKS[nextBlockIndex(r.bi)];
-  const L=[`Block ${r.bi+1} “${r.name}” — review`,
+  const L=[`Block ${r.bi} “${r.name}” — review`,
     `Sessions banked: ${r.sessions}/${r.planned}`];
   if(r.movers.length) L.push("Progressed: "+r.movers.map(m=>`${m.name} +${m.d}`).join(", "));
   if(r.holds.length)  L.push("Held: "+r.holds.map(h=>h.name).join(", "));
-  L.push(`Next → Block ${nextBlockIndex(r.bi)+1} “${to.name}” · ${to.focus}.`,
+  L.push(`Next → Block ${nextBlockIndex(r.bi)} “${to.name}” · ${to.focus}.`,
     `Adjust: reps ${to.dReps>=0?"+":""}${to.dReps}, RPE cap ${to.dRpe>=0?"+":""}${to.dRpe}, accessory volume ${to.dSets>=0?"+":""}${to.dSets} set${Math.abs(to.dSets)===1?"":"s"}, `+
     (to.rotate?"accessories rotate to fresh variations.":"accessories return to the anchor movements."),
     to.note);
@@ -667,9 +873,30 @@ const PRESSING_NAMES=new Set();
 (function(){
   const add=d=>{ if(d && d.pressing){ PRESSING_NAMES.add(d.name.toLowerCase()); const a=altName(d); if(a) PRESSING_NAMES.add(a.toLowerCase()); } };
   ["A","B","C"].forEach(day=>BASE[day].ex.forEach(add));
+  ["A","B"].forEach(day=>BLOCK0[day].ex.forEach(add));
   EXPRESS.ex.forEach(add);
+  add(HINDU_PUSHUP);   // Change 11 — pressing in its home-day chest-slot role
 })();
 function isPressingName(n){ return PRESSING_NAMES.has(String(n||"").toLowerCase()); }
+
+/* direct-arm attribution (Change 9): the closing biceps/triceps superset on each
+   day, plus each one's swap alternate — a swapped set logs the alternate's name
+   and is still direct arm work, so it still counts toward the weekly floor.
+   Deliberately built from `ss:"B"` arm slots only: the older mid-session arm
+   accessories are not part of the 9-biceps/9-triceps prescription. Note that a
+   legacy slot sharing a name with a superset movement (Day C's Rope Pushdown)
+   is counted by name, exactly as pressing attribution works. */
+const ARM_NAMES=new Set();
+(function(){
+  const add=d=>{ if(d && d.muscle==="Arms" && d.ss==="B"){ ARM_NAMES.add(d.name.toLowerCase()); const a=altName(d); if(a) ARM_NAMES.add(a.toLowerCase()); } };
+  ["A","B","C"].forEach(day=>BASE[day].ex.forEach(add));
+})();
+function isArmName(n){ return ARM_NAMES.has(String(n||"").toLowerCase()); }
+
+/* Movements the shoulder rule bars outright (Change 9 — no overhead triceps).
+   `overhead:true` on a def, or an alternate whose name says overhead, must never
+   be reachable from an arm slot; the test suite asserts it. */
+function isOverheadName(n){ return /\boverhead\b/i.test(String(n||"")); }
 
 /* ---------- storage: single versioned store, autosave, safe fallback ---------- */
 /* Editable-by-data defaults (never magic numbers in the render path). All of
@@ -681,6 +908,12 @@ const DEFAULT_SETTINGS = {
   sorenessWindowHours: 72,    // Change 4 — retroactive attribution window
   zone2Lo: 50, zone2Hi: 75,   // Change 6 — weekly Zone-2 minutes target band
   zone2HrLo: 108, zone2HrHi: 126, // Zone-2 HR band — 60–70% of est. max HR (Tanaka, age 39). Estimate: the talk test wins.
+  armSetsTargetPerWeek: 18,   // Change 9 — weekly direct-arm FLOOR (9 biceps + 9 triceps), not a ceiling
+  armSetsGreenAt: 15,         // Change 9 — arm tile reads green at/above this; neutral below; never red
+  sessionBudgetMin: 35,       // Change 9 — session-length ceiling the estimate flags against
+  estWarmupMin: 4,            // Change 9 — session-length estimate inputs (all editable, no magic numbers)
+  estWorkSecPerSet: 45,       //            time under load + setup for one working set
+  estTransitionSec: 45,       //            walking to the next station / loading it
 };
 /* Weekday → session. type:"lift" carries a day A/B/C; "cardio" a label;
    "open" is unscheduled. Stored as data so the user can override any day. */
@@ -703,13 +936,15 @@ function getSettings(){ return Object.assign({}, DEFAULT_SETTINGS, (db&&db.setti
 function seed(){
   return {
     app:APP, schema:SCHEMA, created:todayISO(),
-    program:{i:0, done:0},
+    program:{i:0, done:0},          // index 0 is Block 0 "Show Up" — every install starts there
+    benched:[...DEFAULT_BENCHED],
     settings:{...DEFAULT_SETTINGS},
     schedule:JSON.parse(JSON.stringify(DEFAULT_SCHEDULE)),
     sorenessFlags:[],
     pressingOverrides:[],
+    measurements:[],
     history:[{
-      id:"seed-2026-07-05-A", type:"lift", date:"2026-07-05", day:"A", block:0, flags:[], exercises:[
+      id:"seed-2026-07-05-A", type:"lift", date:"2026-07-05", day:"A", block:1, flags:[], exercises:[
         {name:"Goblet Squat", sets:[{rep:"10",wt:"35",rpe:""},{rep:"10",wt:"35",rpe:"7-8"},{rep:"10",wt:"35",rpe:"7-8"}], note:"quad cramp after S1 — pushed through"},
         {name:"DB Incline Press", sets:[{rep:"11",wt:"25",rpe:""},{rep:"11",wt:"25",rpe:""},{rep:"11",wt:"25",rpe:""}]},
         {name:"Chest-Supported Row", sets:[{rep:"11",wt:"45",rpe:""},{rep:"11",wt:"45",rpe:""},{rep:"11",wt:"45",rpe:""}]},
@@ -751,6 +986,24 @@ const MIGRATIONS = {
     });
     return d;
   },
+  5: d => { // Change 9 — arm block: new settings constants + body-measurement log
+    d.settings = Object.assign({}, DEFAULT_SETTINGS, d.settings||{});
+    d.measurements = Array.isArray(d.measurements) ? d.measurements : [];
+    return d;
+  },
+  6: d => { // Change 13 — Block 0 joins the arc at index 0; Change 12 — benched list
+    // every stored block index shifts up by one, so old history keeps naming the
+    // block it was actually trained in rather than silently becoming "Block 0"
+    (d.history||[]).forEach(h=>{ if(typeof h.block==="number") h.block=h.block+1; });
+    // this install restarts at Block 0 with a fresh gate. History, logged loads
+    // and telemetry are untouched — only where you are in the arc changes.
+    d.program = {i:0, done:0};
+    // half-entered sessions were built against the old templates; Block 0's are
+    // four cards, so they are cleared rather than left mis-aligned
+    d.sessions = {A:null, B:null, C:null};
+    d.benched = Array.isArray(d.benched) ? d.benched : [...DEFAULT_BENCHED];
+    return d;
+  },
 };
 function migrate(d){
   if(!d) return d;
@@ -769,6 +1022,8 @@ function migrate(d){
   if(!d.schedule || typeof d.schedule!=="object") d.schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
   if(!Array.isArray(d.sorenessFlags)) d.sorenessFlags=[];
   if(!Array.isArray(d.pressingOverrides)) d.pressingOverrides=[];
+  if(!Array.isArray(d.measurements)) d.measurements=[];
+  if(!Array.isArray(d.benched)) d.benched=[...DEFAULT_BENCHED];
   (d.history||[]).forEach((h,i)=>{ if(!h.id) h.id="s"+i+"-"+(h.date||"?")+"-"+(h.day||"x");
     if(!h.type) h.type="lift"; if(!Array.isArray(h.flags)) h.flags=[]; });
   return d;
@@ -801,6 +1056,8 @@ document.addEventListener("visibilitychange", ()=>{ if(document.hidden && dirty)
 db = load() || seed();
 persist(); // bake seed/migration into storage on boot
 /* active program for the current block — rebuilt whenever the block changes */
+/* The block's own (gym) templates. Home substitution is a per-day concern and
+   is applied in dayTpl(), which is what every screen actually reads. */
 let PROGRAM = blockProgram(db.program.i);
 function rebuildProgram(){ PROGRAM = blockProgram(db.program.i); }
 
@@ -836,6 +1093,62 @@ function twoCleanShoulderWeeks(){
   return !flagged && pressingSetsBanked(since) >= cap;
 }
 
+/* ---------- direct-arm volume floor (Change 9) — the mirror of the cap --------
+   Same rolling 7-day window and the same banked+live arithmetic as pressing,
+   but read the other way round: pressing is a ceiling you must stay under, arms
+   are a floor you are trying to reach. Nothing is ever blocked or coloured red
+   for being low — a missed week is information, not a failure. */
+function armSetsBanked(sinceISO){
+  let n=0;
+  db.history.forEach(h=>{
+    if(h.date < sinceISO) return;
+    (h.exercises||[]).forEach(e=>{ if(isArmName(e.name)) n += e.sets.filter(s=>s.rep!=="").length; });
+  });
+  return n;
+}
+function armSetsLive(){
+  let n=0;
+  ["A","B","C"].forEach(day=>{ const s=db.sessions[day]; if(!s||!s.data) return;
+    s.data.forEach(x=>{ if(isArmName(x.name)) n += x.sets.filter(v=>v.rep!=="").length; }); });
+  return n;
+}
+function armSetsWeek(){ return armSetsBanked(daysAgoISO(6)) + armSetsLive(); }
+function armSetState(){
+  const S=getSettings(), target=S.armSetsTargetPerWeek|0, n=armSetsWeek();
+  return {target, n, green:n>=(S.armSetsGreenAt|0), hit:n>=target};
+}
+
+/* ---------- session-length estimate (Change 9) ------------------------------
+   Deterministic from the day's own template: work time per set, the def's own
+   prescribed rest between sets of an exercise, and one transition per station.
+   Rest is charged (sets-1) times — the gap after the last set IS the transition
+   to the next station, so charging both would double-count it. All inputs are
+   editable settings. The estimate only ever reports; it never drops a slot. */
+function estimateSessionMinutes(defs){
+  const S=getSettings();
+  let sec=(S.estWarmupMin||0)*60;
+  (defs||[]).forEach(d=>{
+    const sets=d.sets|0;
+    sec += sets*(S.estWorkSecPerSet||0) + Math.max(0,sets-1)*(d.rest||0) + (S.estTransitionSec||0);
+  });
+  return Math.round(sec/60);
+}
+/* When the day runs long, name the set the owner should consider dropping.
+   Arms and core are never the suggestion — the arm superset is the priority
+   this block, and core is already trimmed to 2. Rows go first (Back), then the
+   heaviest remaining non-arm accessory. */
+function trimCandidate(defs){
+  const eligible=(defs||[]).filter(d=>d.muscle!=="Arms" && d.muscle!=="Core" && (d.sets|0)>1);
+  if(!eligible.length) return null;
+  const rows=eligible.filter(d=>d.muscle==="Back");
+  const pool=rows.length?rows:eligible;
+  return pool.reduce((a,b)=>(b.sets|0)>(a.sets|0)?b:a);
+}
+function sessionEstState(defs){
+  const S=getSettings(), min=estimateSessionMinutes(defs), budget=S.sessionBudgetMin|0;
+  return {min, budget, over:min>budget, trim:min>budget?trimCandidate(defs):null};
+}
+
 /* ---------- delayed soreness flags (Change 4) — connect payback to cause -------
    The app previously had no way to link "Saturday's session" to "Monday's
    shoulder." A flag is retroactive; on submit it attributes to every banked
@@ -862,6 +1175,32 @@ function removeSoreness(id){
 }
 function flagsForSession(h){ const byId={}; (db.sorenessFlags||[]).forEach(f=>byId[f.id]=f);
   return (h.flags||[]).map(id=>byId[id]).filter(Boolean); }
+/* Change 9 — the exercise filter behind the flag summary is JOINT-scoped, never
+   `pressing:true`-scoped. The elbow is an arm joint and the shoulder takes load
+   from curls and pushdowns too, so an in-window arm movement surfaces right
+   alongside the pressing ones instead of being invisible. */
+const JOINT_SCOPE={ shoulder:["pressing","arm"], elbow:["arm","pressing"] };
+function flagCulprits(flag){
+  const scope=JOINT_SCOPE[flag&&flag.joint]; if(!scope) return [];
+  const byId={}; db.history.forEach(h=>{ byId[h.id]=h; });
+  const out=[];
+  (flag.sessions||[]).forEach(id=>{
+    const h=byId[id]; if(!h) return;
+    (h.exercises||[]).forEach(e=>{
+      if(!e.sets.some(s=>s.rep!=="")) return;
+      const kind = isPressingName(e.name) ? "pressing" : (isArmName(e.name) ? "arm" : null);
+      if(kind && scope.indexOf(kind)>=0 && !out.some(x=>x.name===e.name)) out.push({name:e.name, kind});
+    });
+    // Change 11 — warm-up pressing (Hindu push-ups, band face pulls) logs no sets
+    // and so never touches the weekly counter, but it is still load through the
+    // joint. When the shoulder pays out days later it deserves to be named.
+    (h.warmPressing||[]).forEach(name=>{
+      if(scope.indexOf("pressing")<0) return;
+      if(!out.some(x=>x.name===name)) out.push({name, kind:"pressing", warm:true});
+    });
+  });
+  return out;
+}
 function sessionFlagBadge(h){
   const fs=flagsForSession(h); if(!fs.length) return "";
   const byJoint={}; fs.forEach(f=>{ byJoint[f.joint]=Math.max(byJoint[f.joint]||0, f.severity||0); });
@@ -894,8 +1233,13 @@ function renderCorr(){
 function renderSoreRecent(){
   const el=$("soreRecent"); if(!el) return;
   const fs=[...(db.sorenessFlags||[])].sort((a,b)=>a.date<b.date?1:-1).slice(0,6);
-  el.innerHTML = fs.length ? `<div class="sorelbl">Recent flags</div>`+fs.map(f=>
-     `<div class="sore-item"><span>⚠ <b>${esc(f.joint)}</b> ${f.severity}/5 · ${esc(f.date)} · ${f.sessions.length} session${f.sessions.length===1?"":"s"}</span><button class="x" data-id="${esc(f.id)}" title="remove flag">✕</button></div>`).join("") : "";
+  el.innerHTML = fs.length ? `<div class="sorelbl">Recent flags</div>`+fs.map(f=>{
+     const cul=flagCulprits(f);
+     const culLine=cul.length
+       ? `<div class="sore-cul"><span class="cul-k">in window:</span>${cul.map(c=>`<span class="culchip ${c.kind}">${esc(c.name)}${c.warm?" · warm-up":""}</span>`).join("")}</div>`
+       : "";
+     return `<div class="sore-item"><span>⚠ <b>${esc(f.joint)}</b> ${f.severity}/5 · ${esc(f.date)} · ${f.sessions.length} session${f.sessions.length===1?"":"s"}</span><button class="x" data-id="${esc(f.id)}" title="remove flag">✕</button></div>${culLine}`;
+   }).join("") : "";
   el.querySelectorAll(".x").forEach(b=>b.onclick=()=>removeSoreness(b.dataset.id));
 }
 
@@ -912,22 +1256,30 @@ const SCHED_OPTIONS=[
 ];
 function schedLabel(e){
   if(!e||e.type==="open") return "Optional / rest";
-  if(e.type==="lift")   return "Full Body "+e.day;
+  if(e.type==="lift")   return isBlock0(db.program.i) ? "Show Up · "+block0Day() : "Full Body "+e.day;
   if(e.type==="cardio") return e.label||"Zone 2 cardio";
   return "—";
 }
 function weekdayKey(iso){ return DOW[new Date((iso||todayISO())+"T00:00:00").getDay()]; }
 function todaySched(){ return db.schedule[weekdayKey()]||{type:"open"}; }
-function defaultDayForToday(){ const s=todaySched(); return (s.type==="lift"&&s.day)?s.day:"A"; }
+/* Which template today opens on. Outside Block 0 the weekday schedule names it
+   outright. Inside Block 0 the schedule still decides WHETHER you lift, but the
+   A-B-A / B-A-B rotation decides which of the two templates you get. */
+function defaultDayForToday(){
+  const s=todaySched();
+  if(isBlock0(db.program.i)) return block0Day();
+  return (s.type==="lift"&&s.day)?s.day:"A";
+}
 function renderTodaySched(){
   const el=$("todaySched"); if(!el) return;
   const wk=weekdayKey(), s=db.schedule[wk]||{type:"open"};
   let action="";
-  if(s.type==="lift")        action = curDay===s.day ? `<span class="ts-on">on it ✓</span>` : `<button class="ts-btn" id="tsGo">Go to Full Body ${esc(s.day)} →</button>`;
+  const schedDay = s.type==="lift" ? effectiveDay(s.day) : null;
+  if(s.type==="lift")        action = curDay===schedDay ? `<span class="ts-on">on it ✓</span>` : `<button class="ts-btn" id="tsGo">Go to ${esc(schedLabel(s))} →</button>`;
   else if(s.type==="cardio") action = `<button class="ts-btn" id="tsCardio">Log cardio →</button>`;
   el.className="todaysched t-"+s.type;
   el.innerHTML=`<span class="ts-lbl">📅 Today · ${wk}</span><span class="ts-sess">${esc(schedLabel(s))}</span>${action}`;
-  const g=$("tsGo");     if(g) g.onclick=()=>{ curDay=s.day; ensureSession(); renderTrain(); };
+  const g=$("tsGo");     if(g) g.onclick=()=>{ curDay=schedDay; ensureSession(); renderTrain(); };
   const c=$("tsCardio"); if(c) c.onclick=()=>{ showOther("cardio"); const f=$("cardioForm"); if(f&&f.scrollIntoView) f.scrollIntoView({behavior:"smooth"}); };
 }
 function renderSchedule(){
@@ -954,8 +1306,9 @@ function parseRPE(s){ if(s==null) return null; const m=String(s).match(/\d+(\.\d
 function lastPerfs(name,n){ // most-recent-first performances of an exercise
   const out=[];
   for(let i=db.history.length-1;i>=0 && out.length<n;i--){
-    const e=(db.history[i].exercises||[]).find(x=>x.name===name);
-    if(e) out.push({e, date:db.history[i].date});
+    const h=db.history[i];
+    const e=(h.exercises||[]).find(x=>x.name===name);
+    if(e) out.push({e, date:h.date, block0:isBlock0(h.block)});
   } return out;
 }
 function lastPerf(name){ return lastPerfs(name,1)[0]||null; }
@@ -971,7 +1324,28 @@ function isBad(st,def){ // a "rough" session: missed the range floor, or hit fai
   return !!st && (st.minReps<def.lo || (st.maxRPE!=null && st.maxRPE>=10));
 }
 const roundToInc=(x,inc)=> inc>0 ? Math.round(x/inc)*inc : Math.round(x);
+/* Change 13 — progression math is OFF inside Block 0. First exposure calibrates
+   at 3–4 reps in reserve; from then on the load holds flat for the rest of the
+   block. No add / hold / deload prompt is surfaced, because none is being made.
+   The stale-load rule still applies: a number from months ago is not a baseline. */
+function prescribeFlat(def){
+  if(def.mode==="time"){
+    const lp=lastPerf(def.name);
+    return {wt:null, fresh:!lp, why: lp
+      ? `Hold the standard — ${def.sets}×${def.lo}${def.name==="Plank"?"s":"/side"}. Block 0 doesn't chase numbers.`
+      : `🆕 Aim ${def.sets}×${def.lo}${def.name==="Plank"?"s":"/side"} — quality over duration.`};
+  }
+  const lp=lastPerf(def.name);
+  const stale = lp && daysSince(lp.date) > (getSettings().staleDays||21);
+  const st = (lp && !stale) ? perfStats(lp.e) : null;
+  if(!st) return {wt:null, fresh:true, recalibrate:!!stale, ageDays:stale?daysSince(lp.date):undefined,
+    why: stale
+      ? `<b>RECALIBRATE</b> — last logged ${daysSince(lp.date)} days ago. Pick a load at RPE 6 (4 reps in reserve); that's your Block 0 baseline and it holds there.`
+      : `🆕 First exposure — pick a load with <b>3–4 reps in the tank</b>. That becomes the baseline and it stays put all block.`};
+  return {wt:st.wt, fresh:false, why:`<b>Hold ${st.wt}</b> — Block 0 runs flat on purpose. Showing up is the progression; loads move in Block 1.`};
+}
 function prescribe(def){
+  if(def.flat) return prescribeFlat(def);
   if(def.mode==="time"){
     const lp=lastPerf(def.name);
     if(!lp) return {wt:null, fresh:true, why:`🆕 Aim ${def.sets}×${def.lo}${def.name==="Plank"?"–"+def.hi+"s":""} — quality over duration.`};
@@ -987,6 +1361,12 @@ function prescribe(def){
       why:`<b>RECALIBRATE</b> — last logged ${ageDays} days ago. Pick a load at RPE 6–7 (3–4 reps in reserve); that becomes the new baseline, then double-progression resumes.`};
   const st=perfStats(perfs[0].e);
   if(!st) return {wt:null, fresh:true, why:"🆕 No logged sets yet — calibrate."};
+  // Change 13 — a Block 0 session is attendance work at RPE 6, not a progression
+  // signal. Its load carries into Block 1 as the starting baseline, unchanged and
+  // with no RECALIBRATE: you earn the next bump from here, in this block.
+  if(perfs[0].block0)
+    return {wt:st.wt, fresh:false, carried:true,
+      why:`<b>${st.wt} lb — carried from Block 0.</b> That's your baseline; hit the top of the range at ≤ RPE ${def.rpeMax} and it bumps.`};
   const wt=st.wt, maxRPE=st.maxRPE, prev=perfs[1]?perfStats(perfs[1].e):null;
 
   // deload: two rough sessions in a row → ~10% cut
@@ -1011,10 +1391,11 @@ function prescribe(def){
 }
 
 /* ---------- session state (one in-progress session per day) ---------- */
-let curDay = ["A","B","C"].find(d=>db.sessions[d]) || defaultDayForToday();
+let curDay = ["A","B","C"].find(d=>db.sessions[d] && PROGRAM[d]) || defaultDayForToday();
+if(!PROGRAM[curDay]) curDay = Object.keys(PROGRAM)[0];
 function curSession(){ return db.sessions[curDay]; }
-function freshSession(day){
-  return {date:todayISO(), day, data:PROGRAM[day].ex.map(d=>({
+function freshSession(day, home){
+  return {date:todayISO(), day, home:!!home, data:blockProgram(db.program.i, !!home)[day].ex.map(d=>({
     name:d.name, sets:Array.from({length:d.sets},()=>({rep:"",wt:"",rpe:""})), done:false, open:false}))};
 }
 /* Express (busy-day) session for a day — same shape, flagged so the template
@@ -1023,11 +1404,28 @@ function freshExpress(day){
   return {date:todayISO(), day, express:true, data:EXPRESS.ex.map(d=>({
     name:d.name, sets:Array.from({length:d.sets},()=>({rep:"",wt:"",rpe:""})), done:false, open:false}))};
 }
-/* The effective template for a day: EXPRESS when that day's session is flagged
-   express, otherwise the block-derived program day. */
-function dayTpl(day){ const s=db.sessions[day]; return (s&&s.express)?EXPRESS:PROGRAM[day]; }
+/* The effective template for a day, and the only place that decides it:
+   EXPRESS when the session is flagged express, otherwise the block-derived day
+   with that session's own home flag applied. Benched exercises, home swaps and
+   the superset rules are all resolved inside finalizeDay/blockProgram, so no
+   screen can disagree with another about what today is. */
+function dayTpl(day){
+  const s=db.sessions[day];
+  if(s&&s.express) return finalizeDay(EXPRESS, false);
+  return blockProgram(db.program.i, !!(s&&s.home))[day] || PROGRAM[day] || null;
+}
+/* An in-progress session's rows are index-aligned with its template. A block
+   change, a benched-list edit or a restored backup can leave a stored session
+   pointing at a template that no longer has those rows, so the shape is checked
+   before anything renders against it and rebuilt if it no longer fits. */
 function ensureSession(){
-  if(!db.sessions[curDay]){ db.sessions[curDay]=freshSession(curDay); persist(); }
+  const sess=db.sessions[curDay];
+  if(!sess){ db.sessions[curDay]=freshSession(curDay); persist(); return; }
+  const defs=(dayTpl(curDay)||{ex:[]}).ex;
+  if(!Array.isArray(sess.data) || sess.data.length!==defs.length){
+    db.sessions[curDay]= sess.express ? freshExpress(curDay) : freshSession(curDay, sess.home);
+    persist();
+  }
 }
 /* One-tap swap between the full gym day and the Express circuit. Swapping
    rebuilds the current day's session, so a two-tap "arm" guards against
@@ -1051,7 +1449,8 @@ function toggleExpress(){
     return;
   }
   if(expressArm){clearTimeout(expressArm);expressArm=null;}
-  db.sessions[curDay]= exp ? freshSession(curDay) : freshExpress(curDay);
+  const wasHome=!!s.home;
+  db.sessions[curDay]= exp ? freshSession(curDay, wasHome) : freshExpress(curDay);
   persist(); renderTrain();
   showToast(exp?`Back to full Day ${curDay} ✓`:"⚡ Express workout ready");
 }
@@ -1061,15 +1460,18 @@ if(["A","B","C"].some(d=>db.sessions[d] && db.sessions[d].data.some(x=>x.sets.so
 }
 
 /* ---------- render: train ---------- */
+const DAY_SUB={A:"Push/Pull",B:"Legs/Pull",C:"Push/Delts"};
+const BLOCK0_SUB={A:"Squat/Press/Row",B:"Squat/Press/Pull"};
 function renderDayTabs(){
   const dt=$("daytabs"); dt.innerHTML="";
-  ["A","B","C"].forEach(d=>{
+  const b0=isBlock0(db.program.i), subs=b0?BLOCK0_SUB:DAY_SUB;
+  programDays().forEach(d=>{
     const b=document.createElement("div");
     b.className="daytab"+(d===curDay?" on":"");
     b.setAttribute("role","button"); b.tabIndex=0;
     b.setAttribute("aria-pressed", d===curDay?"true":"false");
-    b.setAttribute("aria-label",`Day ${d} — ${{A:"Push/Pull",B:"Legs/Pull",C:"Push/Delts"}[d]}`);
-    b.innerHTML=`${d}<small>${{A:"Push/Pull",B:"Legs/Pull",C:"Push/Delts"}[d]}</small>`;
+    b.setAttribute("aria-label",`${b0?"Show Up":"Day"} ${d} — ${subs[d]}`);
+    b.innerHTML=`${d}<small>${subs[d]}</small>`;
     b.onclick=()=>{
       if(d===curDay) return;
       // per-day sessions: switching is non-destructive — each day keeps its own inputs
@@ -1080,9 +1482,25 @@ function renderDayTabs(){
     dt.appendChild(b);
   });
 }
+/* Warm-up items are [label, detail, meta?]. The optional meta names the movement
+   behind the label so the pressing/soreness machinery can see it; a `cues` on it
+   renders as a sub-line, which is how the Hindu push-up's back-safety cue lands
+   where it is actually needed. Warm-ups log no sets, so they never reach the
+   weekly pressing counter. */
 function renderWarm(){
-  $("warmlist").innerHTML = dayTpl(curDay).warm.map(w=>
-    `<div class="warm-item"><span class="dot"></span>${esc(w[0])}<span class="r">${esc(w[1])}</span></div>`).join("");
+  const tpl=dayTpl(curDay)||{warm:[]};
+  $("warmlist").innerHTML = (tpl.warm||[]).map(w=>{
+    const m=w[2]||{};
+    return `<div class="warm-item"><span class="dot"></span><span class="wtxt">${esc(w[0])}${
+      m.cues?`<small class="wcue">${m.cues}</small>`:""}</span><span class="r">${esc(w[1])}</span></div>`;
+  }).join("");
+}
+/* Names of the pressing movements in a day's warm-up. Recorded on the banked
+   session so the delayed-soreness flag can point at them (Change 4 + 11) even
+   though they carry no logged sets. */
+function warmPressingNames(day){
+  const tpl=dayTpl(day)||{warm:[]};
+  return (tpl.warm||[]).map(w=>w[2]).filter(m=>m&&m.pressing&&m.name).map(m=>m.name);
 }
 /* Demo video for an exercise. A curated URL can be pinned per exercise via a
    `video:` field on the def; otherwise fall back to a YouTube search by name,
@@ -1100,7 +1518,7 @@ function altName(def){
 /* block panel + header line: current block, week, session progress, and the
    evaluation from the last transition (with a copy-to-Claude export). */
 function renderBlock(){
-  const blk=BLOCKS[db.program.i], done=db.program.done||0, wk=blockWeek(), num=db.program.i+1;
+  const blk=BLOCKS[db.program.i], done=db.program.done||0, wk=blockWeek(), num=db.program.i;
   const bl=$("blockLine"); if(bl) bl.textContent=`Block ${num} “${blk.name}” · Wk ${wk}/${blk.weeks}`;
   const p=$("blockPanel"); if(!p) return;
   const pct=Math.min(100, Math.round(done/blk.sessions*100)), rv=db.lastReview;
@@ -1166,8 +1584,11 @@ function updatePressGate(){
 }
 function renderTrain(){
   renderBlock();
+  if(!PROGRAM[curDay]) curDay=Object.keys(PROGRAM)[0]||"A";
   ensureSession(); renderDayTabs(); renderWarm();
   $("expressBtn").onclick=toggleExpress; updateExpressBtn();
+  $("homeBtn").onclick=toggleHome; updateHomeBtn();
+  renderGateStrip(); renderUnlockNote();
   const defs=dayTpl(curDay).ex, list=$("exlist"); list.innerHTML="";
   const sess=curSession();
   defs.forEach((def,i)=>{
@@ -1178,7 +1599,7 @@ function renderTrain(){
     // swap: the logged exercise is st.name; when it differs from the template's
     // primary, this set is being done as the alternate. Prescription, name and
     // how-to all follow the effective (possibly swapped) exercise.
-    const alt=altName(def), swapped=!!alt && st.name!==def.name;
+    const alt=subFor(def), swapped=!!alt && st.name!==def.name;
     const eff=swapped ? {...def, name:st.name} : def;
     const rx=prescribe(eff);
     const pressing=!!def.pressing || isPressingName(st.name);
@@ -1265,8 +1686,79 @@ function renderTrain(){
     });
   });
   $("setmeta").textContent = defs.reduce((a,d)=>a+d.sets,0)+" sets";
+  renderSessionEst(defs);
   renderTodaySched(); renderZone2Hint(); renderPressCap(); updatePressGate();
   persist();
+}
+
+/* ---------- Change 11 — home days -----------------------------------------
+   No rack, no cables: the chest slot becomes Hindu push-ups at 3×8–12. The swap
+   is 1-for-1 and set counts match, so the session's logged rows stay aligned and
+   nothing already entered is lost — only the name on that one card changes. And
+   in this role it IS logged, so unlike the warm-up version it counts against the
+   weekly pressing cap. */
+function updateHomeBtn(){
+  const b=$("homeBtn"); if(!b) return;
+  const sess=curSession(), home=!!(sess&&sess.home), exp=!!(sess&&sess.express);
+  b.style.display = exp ? "none" : "";
+  b.classList.toggle("on",home);
+  b.textContent = home ? "↩︎ Back to the gym template" : "🏠 Home day — no rack, no cables";
+}
+function toggleHome(){
+  ensureSession();
+  const sess=curSession(); if(!sess || sess.express) return;
+  const before=(dayTpl(curDay)||{ex:[]}).ex;
+  sess.home=!sess.home;
+  const after=(dayTpl(curDay)||{ex:[]}).ex;
+  // re-point only the rows whose movement actually changed; logged sets stay put
+  after.forEach((d,i)=>{ const st=sess.data[i]; if(!st) return;
+    if(before[i] && st.name===before[i].name) st.name=d.name; });
+  persist(); renderTrain();
+  showToast(sess.home?"🏠 Home day — Hindu push-ups take the chest slot":"Back to the gym template ✓");
+}
+
+/* Change 13 — the attendance gate, shown as six boxes. It is the whole point of
+   Block 0, so it sits at the top of Train and (during Block 0) at the top of
+   Trends. Cumulative: a skipped week leaves the filled boxes exactly as they
+   were. Hidden entirely once Block 1 is running. */
+function gateStripHTML(){
+  const g=block0State(); if(!g.on) return "";
+  const boxes=Array.from({length:g.gate},(_,i)=>
+    `<div class="gs-box${i<g.done?" on":""}">${i<g.done?"✓":i+1}</div>`).join("");
+  return `<div class="gs-top"><span>Block 0 · show up</span><span class="gs-num">${g.done} / ${g.gate}</span></div>
+    <div class="gs-boxes">${boxes}</div>
+    <div class="gs-msg">${ g.left
+      ? `${g.left} more completed session${g.left===1?"":"s"} and Block 1 unlocks. Every card marked done = one box. Miss a week and the boxes stay — nothing resets.`
+      : `Gate cleared — Block 1 unlocks when you complete this session.` }</div>`;
+}
+function renderGateStrip(){ const el=$("gateStrip"); if(el) el.innerHTML=gateStripHTML(); }
+function renderB0Strip(){
+  const el=$("b0Strip"); if(!el) return;
+  const h=gateStripHTML();
+  el.innerHTML = h ? `<div class="sect"><h2>Showing up</h2><span class="meta" style="color:var(--ok);font-family:var(--mono);font-size:11px">BLOCK 0 GATE</span></div><div class="gatestrip">${h}</div>` : "";
+}
+/* One-time state: shown once after the gate clears, then dismissed for good. */
+function renderUnlockNote(){
+  const el=$("unlockNote"); if(!el) return;
+  const u=db.block0Done;
+  if(!u || u.seen){ el.style.display="none"; return; }
+  el.style.display="block";
+  el.innerHTML=`<b>Block 1 unlocked.</b> ${u.sessions} sessions banked — the gate is cleared as of ${esc(u.date)}.
+    The full A/B/C program is back, arm finisher included, and every load you set in Block 0 carried over as its baseline.
+    <br><button id="unlockOk" type="button">Got it ›</button>`;
+  const b=$("unlockOk"); if(b) b.onclick=()=>{ db.block0Done.seen=true; persist(); renderUnlockNote(); };
+}
+
+/* Change 9 — report the day's length, never edit it. If the day runs long the
+   banner names one row set to drop; the arm superset is never the suggestion
+   and is never dropped automatically. */
+function renderSessionEst(defs){
+  const el=$("sessEst"); if(!el) return;
+  const st=sessionEstState(defs);
+  el.className="sessest"+(st.over?" over":"");
+  el.innerHTML = st.over
+    ? `<b>~${st.min} min</b> — over the ${st.budget} min budget.${st.trim?` Need the time back? Drop <b>one ${esc(st.trim.name)} set</b> — the arm superset stays.`:""}`
+    : `<b>~${st.min} min</b> — inside the ${st.budget} min budget.`;
 }
 
 /* ---------- rest timer (wall-clock based; audio + vibration) ----------
@@ -1328,7 +1820,7 @@ $("timerX").onclick=()=>{clearInterval(timerIv);timerIv=null;clearTimeout(hideIv
 
 /* ---------- session log builder + finish ---------- */
 function sessionLogText(sess){
-  const defs=(sess.express?EXPRESS:PROGRAM[sess.day]).ex;
+  const defs=(dayTpl(sess.day)||{ex:[]}).ex;
   const lines=[`${sess.express?"Express":"Full Body"} ${sess.day} — ${sess.date}`];
   sess.data.forEach((st,i)=>{
     const def=defs[i]||{};
@@ -1351,21 +1843,28 @@ $("finishBtn").onclick=()=>{
   const sess=curSession();
   const touched=sess.data.some(x=>x.done||x.sets.some(s=>s.rep!==""));
   if(!touched){ showToast("Nothing logged yet — enter at least one set"); return; }
-  const entry={id:uid("s"), type:"lift", flags:[], date:sess.date, day:sess.day, block:db.program.i,
+  const inB0=isBlock0(db.program.i);
+  const counts=!inB0 || block0SessionCounts(sess);
+  const entry={id:uid("s"), type:"lift", flags:[], date:sess.date, day:sess.day, block:db.program.i, home:!!sess.home,
+    warmPressing:warmPressingNames(sess.day),
     exercises:sess.data.filter(x=>x.done||x.sets.some(s=>s.rep!=="")).map(x=>({
       name:x.name, sets:x.sets.map(s=>({rep:s.rep,wt:s.wt,rpe:s.rpe||""}))}))};
   db.history.push(entry);
   const text=sessionLogText(sess);
   db.sessions[curDay]=null;                 // clear the completed day
   // auto-advance: one more session banked toward this block's target
-  db.program.done=(db.program.done||0)+1;
+  if(counts) db.program.done=(db.program.done||0)+1;
   let advanced=false;
-  if(db.program.done>=BLOCKS[db.program.i].sessions){ advanceBlock(); advanced=true; }
+  if(counts && db.program.done>=BLOCKS[db.program.i].sessions){ advanceBlock(); advanced=true; }
   persist();
+  curDay = isBlock0(db.program.i) ? block0Day() : (PROGRAM[curDay]?curDay:(Object.keys(PROGRAM)[0]||"A"));
   renderBlock(); renderTrain(); renderTrends();
   if(advanced){
     // surface the review; the copied session log still went to the clipboard is deferred to the review copy
     showToast(`Block complete → now in “${BLOCKS[db.program.i].name}” 🎯`);
+  } else if(!counts){
+    // banked and visible in Log — it just doesn't move the attendance gate
+    copyText(text,`Banked ✓ — ${block0State().done}/${BLOCK0_GATE}. Mark every card done for a session to count toward the gate.`);
   } else {
     copyText(text,"Session banked ✓ — log copied for Claude");
   }
@@ -1375,11 +1874,25 @@ $("finishBtn").onclick=()=>{
    against the new block's targets. */
 function advanceBlock(){
   const from=db.program.i;
+  // Change 13 — leaving Block 0 is the gate clearing, so it is stamped: the
+  // date is kept in the Vault and a one-time unlock banner shows on Train.
+  if(isBlock0(from)) db.block0Done={date:todayISO(), sessions:BLOCK0_GATE, seen:false};
   db.lastReview={text:blockReviewText(evaluateBlock(from)), from:BLOCKS[from].name, to:BLOCKS[nextBlockIndex(from)].name, date:todayISO()};
   db.program={i:nextBlockIndex(from), done:0};
   db.sessions={A:null,B:null,C:null};
   rebuildProgram();
-  curDay="A";
+  curDay=Object.keys(PROGRAM)[0]||"A";
+}
+/* Change 13 — the Block 0 completion gate. A session counts only when all four
+   cards are marked done; anything less still banks and still shows up in Log,
+   it just doesn't move the counter. The counter is cumulative, so a skipped
+   week costs you time and nothing else — it never resets to zero. */
+function block0SessionCounts(sess){
+  return !!(sess && Array.isArray(sess.data) && sess.data.length && sess.data.every(x=>x.done));
+}
+function block0State(){
+  const done=Math.min(BLOCK0_GATE, db.program.done||0);
+  return {on:isBlock0(db.program.i), done, gate:BLOCK0_GATE, left:Math.max(0,BLOCK0_GATE-done)};
 }
 
 /* ---------- telemetry wing ---------- */
@@ -1464,6 +1977,76 @@ $("soreSave").onclick=()=>{
   showToast(n ? `Flagged — linked to ${n} session${n===1?"":"s"} in the prior 72 h` : "Flagged — no sessions in the prior 72 h to link");
 };
 
+/* ---------- body-measurement wiring (Change 9) ---------- */
+function renderMeasureRecent(){
+  const el=$("mRecent"); if(!el) return;
+  const rows=measurementsSorted().slice(-4).reverse();
+  el.innerHTML = rows.length
+    ? `<div class="sorelbl">Recent</div>`+rows.map(m=>{
+        const bits=MEASURE_FIELDS.filter(([k])=>m[k]!=null && m[k]!=="").map(([k,lbl])=>`${esc(lbl)} ${m[k]}"`);
+        return `<div class="sore-item"><span>${esc(m.date)} · ${bits.join(" · ")||"—"}</span></div>`;
+      }).join("")
+    : `<div class="corr-note">No measurements logged yet — shoulder, waist and both flexed arms feed the Trends ratio board.</div>`;
+}
+/* ---------- Change 12 — the benched list ------------------------------------
+   Add a name and it leaves every template and every swap list. Remove it and it
+   comes straight back — with its old load if that load is recent enough to trust
+   (Change 7), and with a RECALIBRATE prompt if it isn't. History is never touched
+   either way, so Log and Trends keep showing what you actually did. */
+function benchAdd(name){
+  const n=String(name||"").trim(); if(!n) return false;
+  if(isBenched(n)) return false;
+  db.benched.push(n);
+  db.sessions={A:null,B:null,C:null};   // templates just changed shape
+  persist(); rebuildProgram(); return true;
+}
+function benchRemove(name){
+  const k=String(name||"").toLowerCase();
+  db.benched=db.benched.filter(x=>String(x).toLowerCase()!==k);
+  db.sessions={A:null,B:null,C:null};
+  persist(); rebuildProgram();
+}
+/* The Block 0 transition, logged in the Vault: either where the gate stands or
+   the date it cleared. */
+function renderBlock0Vault(){
+  const el=$("vBlock0"); if(!el) return;
+  const g=block0State(), u=db.block0Done;
+  el.innerHTML = u
+    ? `cleared <b>${esc(u.date)}</b> — ${u.sessions} sessions banked, Block 1 unlocked.`
+    : g.on ? `in progress — <b>${g.done} / ${g.gate}</b> completed sessions. Cumulative; a missed week doesn't reset it.`
+    : `not run on this install.`;
+}
+function renderBenched(){
+  const el=$("benchList"); if(!el) return;
+  const list=benchedList();
+  el.innerHTML = list.length
+    ? list.map(n=>`<div class="benchrow"><span>🪑 ${esc(n)}</span><button class="x" data-n="${esc(n)}" title="return to rotation">↩︎</button></div>`).join("")
+    : `<div class="benchempty">Nothing benched — every movement in the library is in rotation.</div>`;
+  el.querySelectorAll(".x").forEach(b=>b.onclick=()=>{
+    const n=b.dataset.n; benchRemove(n); renderBenched(); renderTrain();
+    showToast(`${n} is back in rotation ✓`);
+  });
+}
+if($("bAddBtn")) $("bAddBtn").onclick=()=>{
+  const inp=$("bAdd"), n=(inp.value||"").trim();
+  if(!n){ showToast("Type the exercise name first"); return; }
+  if(!benchAdd(n)){ showToast(`${n} is already benched`); return; }
+  inp.value=""; renderBenched(); renderTrain();
+  showToast(`${n} benched — out of templates, history kept`);
+};
+renderBenched(); renderBlock0Vault();
+
+if($("mDate")) $("mDate").value=todayISO();
+if($("mSave")) $("mSave").onclick=()=>{
+  const n=saveMeasurement({date:$("mDate").value||todayISO(),
+    shoulder:$("mShoulder").value, waist:$("mWaist").value,
+    armL:$("mArmL").value, armR:$("mArmR").value});
+  if(!n){ showToast("Enter at least one measurement"); return; }
+  ["mShoulder","mWaist","mArmL","mArmR"].forEach(id=>{ const e=$(id); if(e) e.value=""; });
+  renderMeasureRecent(); renderTrends();
+  showToast(`Saved ${n} measurement${n===1?"":"s"} ✓`);
+};
+
 /* ---------- other-session logging: cardio + class/external (Changes 2 & 5) ----
    Cardio and classes are first-class banked sessions (type on the history entry)
    that count toward adherence like lifts, but do NOT advance the lifting block.
@@ -1529,6 +2112,54 @@ $("classSave").onclick=()=>{
   showOther("class"); showToast(est?`Activity banked ✓ — +${est} pressing to the weekly cap`:"Activity banked ✓ — counts toward adherence");
 };
 
+/* ---------- body measurements (Change 9) ------------------------------------
+   Flexed arm circumference joins shoulder and waist in the Vault. Stored as a
+   dated log (one row per date, fields merged) so Trends can show a delta rather
+   than a bare number. Inches to one decimal; blank fields are left untouched so
+   you can log just an arm without clearing the rest. */
+const MEASURE_FIELDS=[["shoulder","Shoulder"],["waist","Waist"],["armL","Left arm"],["armR","Right arm"]];
+function measurementsSorted(){ return [...(db.measurements||[])].sort((a,b)=>a.date<b.date?-1:1); }
+function latestMeasure(field){
+  const rows=measurementsSorted().filter(r=>r[field]!=null && r[field]!=="" && !isNaN(parseFloat(r[field])));
+  if(!rows.length) return null;
+  const v=parseFloat(rows[rows.length-1][field]);
+  const prev=rows.length>1 ? parseFloat(rows[rows.length-2][field]) : null;
+  return {v, date:rows[rows.length-1].date, n:rows.length,
+    delta: prev!=null ? Math.round((v-prev)*10)/10 : null};
+}
+function saveMeasurement(rec){
+  const date=(rec&&rec.date)||todayISO();
+  const clean={date}; let n=0;
+  MEASURE_FIELDS.forEach(([k])=>{
+    const raw=String(rec&&rec[k]!=null?rec[k]:"").trim();
+    if(raw==="") return;
+    const v=Math.round(parseFloat(raw)*10)/10;
+    if(!isNaN(v)){ clean[k]=v; n++; }
+  });
+  if(!n) return 0;
+  if(!Array.isArray(db.measurements)) db.measurements=[];
+  const i=db.measurements.findIndex(m=>m.date===date);
+  if(i>=0) db.measurements[i]=Object.assign({}, db.measurements[i], clean);
+  else db.measurements.push(clean);
+  db.measurements.sort((a,b)=>a.date<b.date?-1:1);
+  persist();
+  return n;
+}
+/* The V-taper ratio stays exactly what it was: shoulder ÷ waist. Arm
+   circumference is reported on its own line and is deliberately NOT folded
+   into it — a bigger arm should never flatter the taper number. */
+function shoulderToWaist(){
+  const sh=latestMeasure("shoulder"), w=latestMeasure("waist");
+  if(!sh||!w||!w.v) return null;
+  return Math.round(sh.v/w.v*100)/100;
+}
+function armAverage(){
+  const l=latestMeasure("armL"), r=latestMeasure("armR");
+  if(!l && !r) return null;
+  if(l && r) return Math.round((l.v+r.v)/2*10)/10;
+  return (l||r).v;
+}
+
 /* ---------- trends ---------- */
 /* Change 6 — health metrics lead the tab. All deterministic from local data. */
 function rhrSeries(){ return db.telemetry.filter(e=>e.raw && e.raw.rhr!=="" && e.raw.rhr!=null)
@@ -1554,10 +2185,16 @@ function renderHealth(){
   const p=pressCapState(), ppct=p.cap?Math.min(100,Math.round(p.n/p.cap*100)):0;
   const pCard=`<div class="hcard"><div class="hc-lbl">Pressing sets</div><div class="hc-val">${p.n}<span class="hc-u">/ ${p.cap}</span></div>
      <div class="hc-bar"><span class="${p.over?"warn":"good"}" style="width:${ppct}%"></span></div><div class="hc-sub">weekly shoulder cap</div></div>`;
+  /* Change 9 — the mirror of the pressing tile: same visual pattern, opposite
+     meaning. A floor, so it reads green once it is met and stays neutral (never
+     red) below — a light week is information, not a scolding. */
+  const arm=armSetState(), armPct=arm.target?Math.min(100,Math.round(arm.n/arm.target*100)):0;
+  const armCard=`<div class="hcard"><div class="hc-lbl">Arm sets this week</div><div class="hc-val">${arm.n}<span class="hc-u">/ ${arm.target}</span></div>
+     <div class="hc-bar"><span class="${arm.green?"good":"neut"}" style="width:${armPct}%"></span></div><div class="hc-sub">direct work — a floor to hit</div></div>`;
   const sched=scheduledCountLast7(), done=completedCountLast7(), apct=sched?Math.min(100,Math.round(done/sched*100)):0;
   const aCard=`<div class="hcard"><div class="hc-lbl">Adherence · 7d</div><div class="hc-val">${done}<span class="hc-u">/ ${sched||0}</span></div>
      ${sched?`<div class="hc-bar"><span class="good" style="width:${apct}%"></span></div>`:""}<div class="hc-sub">${sched?"sessions done vs scheduled":"nothing scheduled"}</div></div>`;
-  el.innerHTML=`<div class="hcards">${rhrCard}${zCard}${pCard}${aCard}</div>`;
+  el.innerHTML=`<div class="hcards">${rhrCard}${zCard}${pCard}${armCard}${aCard}</div>`;
 }
 function epley(w,r){return r>0?Math.round(w*(1+r/30)*10)/10:0;}
 function computePRs(){
@@ -1574,8 +2211,34 @@ function sessionTonnage(h){
   let t=0; (h.exercises||[]).forEach(e=>e.sets.forEach(s=>{
     const w=parseFloat(s.wt),r=parseInt(s.rep,10); if(w&&r)t+=w*r;})); return t;
 }
+/* Change 9 — measurement scoreboard. Arm circumference is its OWN line, not a
+   term in the taper ratio; the two answer different questions. */
+function renderRatios(){
+  const el=$("ratioBoard"); if(!el) return;
+  const sh=latestMeasure("shoulder"), wa=latestMeasure("waist");
+  const l=latestMeasure("armL"), r=latestMeasure("armR");
+  const sw=shoulderToWaist(), avg=armAverage();
+  const dlt=m=>(m && m.delta!=null && m.delta!==0)
+    ? ` <span class="${m.delta>0?"good":"warn"}">${m.delta>0?"+":""}${m.delta}"</span>` : "";
+  const armDetail=(l||r)
+    ? `L ${l?l.v.toFixed(1)+'"'+dlt(l):"—"} · R ${r?r.v.toFixed(1)+'"'+dlt(r):"—"}`
+    : "log flexed arms in the Vault";
+  const taperDetail=(sh&&wa) ? `${sh.v.toFixed(1)}" shoulder ÷ ${wa.v.toFixed(1)}" waist`
+    : "log shoulder + waist in the Vault";
+  const rows=[
+    ["Shoulder-to-waist", sw!=null?sw.toFixed(2):"—", taperDetail],
+    ["Arm circumference", avg!=null?avg.toFixed(1)+'"':"—", armDetail],
+  ];
+  el.innerHTML=`<div class="tblcard"><table class="corr-tbl">
+      <tr><th>Measure</th><th class="n">Now</th><th>Detail</th></tr>
+      ${rows.map(([a,b,c])=>`<tr><td>${esc(a)}</td><td class="n">${esc(b)}</td><td>${c}</td></tr>`).join("")}
+    </table></div>
+    <div class="corr-note">Arms sit on their own line on purpose — folding them into the taper ratio would let a bigger arm flatter a number it has nothing to do with. Flexed, inches, one decimal.</div>`;
+}
 function renderTrends(){
+  renderB0Strip(); renderBlock0Vault();   // Change 13 — during Block 0 the attendance gate leads
   renderHealth();
+  renderRatios();
   const prs=computePRs();
   const names=Object.keys(prs);
   $("prTable").innerHTML="<tr><th>Lift</th><th>e1RM</th><th>Best set</th><th>Date</th></tr>"+
@@ -1660,10 +2323,20 @@ $("vFile").addEventListener("change",e=>{
       const d=JSON.parse(r.result);
       if(!(d && d.app===APP && Array.isArray(d.history) && Array.isArray(d.telemetry))) throw 0;
       if(!confirm(`Restore backup from ${d.exported||"unknown date"}? This replaces current data (${db.history.length} sessions).`)) return;
-      db=migrate({app:APP,schema:SCHEMA,created:d.created||todayISO(),program:d.program||db.program,
-          history:d.history,telemetry:d.telemetry,sessions:d.sessions,session:d.session});
-      persist(); curDay=["A","B","C"].find(x=>db.sessions[x])||defaultDayForToday(); rebuildProgram();
-      renderTrain(); renderTrends(); showToast("Backup restored ✓");
+      // Carry every stored branch across, and migrate from the BACKUP's schema —
+      // pinning it to SCHEMA skipped the ladder, and the short field list quietly
+      // dropped settings/schedule/flags (and would now drop measurements too).
+      db=migrate({app:APP, schema:(typeof d.schema==="number"?d.schema:1), created:d.created||todayISO(),
+          program:d.program||db.program, history:d.history, telemetry:d.telemetry,
+          sessions:d.sessions, session:d.session,
+          settings:d.settings, schedule:d.schedule, sorenessFlags:d.sorenessFlags,
+          pressingOverrides:d.pressingOverrides, measurements:d.measurements,
+          benched:d.benched, block0Done:d.block0Done});
+      persist(); rebuildProgram();
+      curDay=Object.keys(PROGRAM).find(x=>db.sessions[x])||defaultDayForToday();
+      if(!PROGRAM[curDay]) curDay=Object.keys(PROGRAM)[0]||"A";
+      renderTrain(); renderTrends(); renderSoreRecent(); renderSchedule(); renderMeasureRecent(); renderBenched();
+      showToast("Backup restored ✓");
     }catch(err){ showToast("That file isn't a valid Q Branch backup"); }
     e.target.value="";
   };
@@ -1698,7 +2371,8 @@ $("vReset").onclick=()=>{
   if(!confirm("Last check: really erase everything?"))return;
   try{localStorage.removeItem(DB_KEY);}catch(e){}
   db=seed(); persist(); curDay="A"; rebuildProgram();
-  renderTrain(); renderTrends(); showToast("Reset — reseeded with your 07-05 baseline");
+  renderTrain(); renderTrends(); renderSoreRecent(); renderMeasureRecent();
+  showToast("Reset — reseeded with your 07-05 baseline");
 };
 
 /* ---------- shared: clipboard, toast, nav ---------- */
@@ -1733,7 +2407,7 @@ document.addEventListener("keydown",e=>{
 });
 
 /* ---------- boot ---------- */
-renderTrain(); renderTele(); renderTrends(); renderVaultStat(); renderSoreRecent(); renderSchedule();
+renderTrain(); renderTele(); renderTrends(); renderVaultStat(); renderSoreRecent(); renderSchedule(); renderMeasureRecent();
 // make the telemetry tap-chips keyboard-operable (clicks bubble to their group handler)
 document.querySelectorAll("#pg-log .tchip, #pg-train .tchip").forEach(c=>{ c.setAttribute("role","button"); c.tabIndex=0; });
 /* offline shell: cache-first service worker (no-ops on file:// or unsupported) */
